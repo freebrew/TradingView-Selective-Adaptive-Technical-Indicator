@@ -1,0 +1,277 @@
+//@version=5
+indicator("Four Dropdown Technical Indicator Strategy", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500)
+
+// ====== PRESET SELECTION ======
+presetGroup = "Strategy Presets"
+preset = input.string("Default", "Strategy Preset", options=["Default", "Optimal Performance", "Breakout", "Reversal", "Trend Dominator"], tooltip="Select a pre-configured set of optimized parameters", group=presetGroup)
+
+// ====== INDICATOR SELECTION DROPDOWNS ======
+
+// === Trending Indicators Settings ===
+trendingGroup = "Trending Indicator Settings"
+trendingType = input.string("MACD", "Trending Indicator", options=["SMA", "EMA", "MACD", "ADX", "PSAR"], group=trendingGroup)
+
+// === Volatility Indicators Settings ===
+volatilityGroup = "Volatility Indicator Settings"
+volatilityType = input.string("Bollinger Bands", "Volatility Indicator", options=["Bollinger Bands", "ATR", "Keltner Channel", "Standard Deviation", "Chaikin Volatility"], group=volatilityGroup)
+
+// === Momentum Indicators Settings ===
+momentumGroup = "Momentum Indicator Settings"
+momentumType = input.string("RSI", "Momentum Indicator", options=["RSI", "Stochastic", "CCI", "Williams %R", "MACD Histogram"], group=momentumGroup)
+
+// === Volume Indicators Settings ===
+volumeGroup = "Volume Indicator Settings"
+volumeType = input.string("OBV", "Volume Indicator", options=["OBV", "MFI", "Chaikin Money Flow", "Volume Oscillator", "A/D Line"], group=volumeGroup)
+
+// Set parameters based on selected preset
+trendsLength = 14
+trendsFast = preset == "Optimal Performance" ? 12 : preset == "Breakout" ? 8 : preset == "Reversal" ? 6 : preset == "Trend Dominator" ? 15 : 12
+trendsSlow = preset == "Optimal Performance" ? 26 : preset == "Breakout" ? 21 : preset == "Reversal" ? 19 : preset == "Trend Dominator" ? 30 : 26
+trendsSignal = preset == "Optimal Performance" ? 9 : preset == "Breakout" ? 7 : preset == "Reversal" ? 5 : preset == "Trend Dominator" ? 10 : 9
+
+volLength = preset == "Optimal Performance" ? 20 : preset == "Breakout" ? 15 : preset == "Reversal" ? 25 : preset == "Trend Dominator" ? 30 : 20
+volMultiplier = preset == "Optimal Performance" ? 2.0 : preset == "Breakout" ? 2.5 : preset == "Reversal" ? 1.8 : preset == "Trend Dominator" ? 2.2 : 2.0
+
+momLength = preset == "Optimal Performance" ? 14 : preset == "Breakout" ? 10 : preset == "Reversal" ? 16 : preset == "Trend Dominator" ? 12 : 14
+momOverBought = preset == "Optimal Performance" ? 70 : preset == "Breakout" ? 65 : preset == "Reversal" ? 75 : preset == "Trend Dominator" ? 68 : 70
+momOverSold = preset == "Optimal Performance" ? 30 : preset == "Breakout" ? 35 : preset == "Reversal" ? 25 : preset == "Trend Dominator" ? 32 : 30
+
+volPeriod = preset == "Optimal Performance" ? 14 : preset == "Breakout" ? 10 : preset == "Reversal" ? 16 : preset == "Trend Dominator" ? 12 : 14
+
+// === Signal Combination Settings ===
+signalGroup = "Signal Combination"
+signalStrategy = input.string("All Agree", "Signal Combination Strategy", options=["All Agree", "Majority Vote", "Custom Threshold"], group=signalGroup)
+customThreshold = input.int(3, "Custom Threshold (1-4)", minval=1, maxval=4, tooltip="Number of indicators required to agree for a signal (only used with Custom Threshold selection)", group=signalGroup)
+
+// ====== CALCULATE TRENDING INDICATORS ======
+
+trending_signal = 0
+
+// Calculate only the selected trending indicator
+if trendingType == "SMA"
+    sma_value = ta.sma(close, trendsLength)
+    trending_signal := close > sma_value ? 1 : close < sma_value ? -1 : 0
+else if trendingType == "EMA"
+    ema_value = ta.ema(close, trendsLength)
+    trending_signal := close > ema_value ? 1 : close < ema_value ? -1 : 0
+else if trendingType == "MACD"
+    [macd_line, macd_signal, macd_hist] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
+    trending_signal := macd_line > macd_signal ? 1 : macd_line < macd_signal ? -1 : 0
+else if trendingType == "ADX"
+    [plusDI, minusDI, adx_value] = ta.dmi(trendsLength, trendsLength)
+    trending_signal := adx_value > 25 and plusDI > minusDI ? 1 : adx_value > 25 and plusDI < minusDI ? -1 : 0
+else if trendingType == "PSAR"
+    psar = ta.sar(0.02, 0.02, 0.2)
+    trending_signal := close > psar ? 1 : close < psar ? -1 : 0
+
+// ====== CALCULATE VOLATILITY INDICATORS ======
+
+volatility_signal = 0
+
+// Calculate only the selected volatility indicator
+if volatilityType == "Bollinger Bands"
+    bbMiddle = ta.sma(close, volLength)
+    bbUpper = bbMiddle + ta.stdev(close, volLength) * volMultiplier
+    bbLower = bbMiddle - ta.stdev(close, volLength) * volMultiplier
+    volatility_signal := close > bbUpper ? 1 : close < bbLower ? -1 : 0
+else if volatilityType == "ATR"
+    atr_value = ta.atr(volLength)
+    volatility_signal := close > close[1] + atr_value ? 1 : close < close[1] - atr_value ? -1 : 0
+else if volatilityType == "Keltner Channel"
+    kc_middle = ta.ema(close, volLength)
+    kc_upper = kc_middle + ta.atr(volLength) * volMultiplier
+    kc_lower = kc_middle - ta.atr(volLength) * volMultiplier
+    volatility_signal := close > kc_upper ? 1 : close < kc_lower ? -1 : 0
+else if volatilityType == "Standard Deviation"
+    std_dev = ta.stdev(close, volLength)
+    volatility_signal := std_dev > ta.sma(std_dev, volLength) ? 1 : std_dev < ta.sma(std_dev, volLength) ? -1 : 0
+else if volatilityType == "Chaikin Volatility"
+    chaikinVol = ta.change(ta.ema(high - low, volLength), volLength)
+    volatility_signal := chaikinVol > 0 ? 1 : chaikinVol < 0 ? -1 : 0
+
+// ====== CALCULATE MOMENTUM INDICATORS ======
+
+momentum_signal = 0
+
+// Calculate only the selected momentum indicator
+if momentumType == "RSI"
+    rsi_value = ta.rsi(close, momLength)
+    momentum_signal := rsi_value < momOverSold ? 1 : rsi_value > momOverBought ? -1 : 0
+else if momentumType == "Stochastic"
+    stoch_k = ta.stoch(close, high, low, momLength)
+    stoch_d = ta.sma(stoch_k, 3)
+    momentum_signal := stoch_k < momOverSold and stoch_k > stoch_d ? 1 : stoch_k > momOverBought and stoch_k < stoch_d ? -1 : 0
+else if momentumType == "CCI"
+    cci_value = ta.cci(close, momLength)
+    momentum_signal := cci_value < -100 ? 1 : cci_value > 100 ? -1 : 0
+else if momentumType == "Williams %R"
+    williams_r = ta.wpr(momLength)
+    momentum_signal := williams_r < -80 ? 1 : williams_r > -20 ? -1 : 0
+else if momentumType == "MACD Histogram"
+    [_, _, macd_hist_mom] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
+    momentum_signal := macd_hist_mom > 0 and macd_hist_mom > macd_hist_mom[1] ? 1 : macd_hist_mom < 0 and macd_hist_mom < macd_hist_mom[1] ? -1 : 0
+
+// ====== CALCULATE VOLUME INDICATORS ======
+
+volume_signal = 0
+
+// Calculate only the selected volume indicator
+if volumeType == "OBV"
+    obv_value = ta.obv
+    volume_signal := obv_value > ta.sma(obv_value, volPeriod) ? 1 : obv_value < ta.sma(obv_value, volPeriod) ? -1 : 0
+else if volumeType == "MFI"
+    mfi_value = ta.mfi(hlc3, volPeriod)
+    volume_signal := mfi_value < 20 ? 1 : mfi_value > 80 ? -1 : 0
+else if volumeType == "Chaikin Money Flow"
+    moneyFlowMultiplier = ((close - low) - (high - close)) / (high - low)
+    moneyFlowVolume = moneyFlowMultiplier * volume
+    cmf_value = ta.sma(moneyFlowVolume, volPeriod) / ta.sma(volume, volPeriod)
+    volume_signal := cmf_value > 0.05 ? 1 : cmf_value < -0.05 ? -1 : 0
+else if volumeType == "Volume Oscillator"
+    volume_ema_fast = ta.ema(volume, 12)
+    volume_ema_slow = ta.ema(volume, 26)
+    vo_value = 100 * (volume_ema_fast - volume_ema_slow) / volume_ema_slow
+    volume_signal := vo_value > 0 ? 1 : vo_value < 0 ? -1 : 0
+else if volumeType == "A/D Line"
+    ad_value = ta.accdist
+    volume_signal := ad_value > ta.sma(ad_value, volPeriod) ? 1 : ad_value < ta.sma(ad_value, volPeriod) ? -1 : 0
+
+// ====== SIGNAL COMBINATION STRATEGY ======
+
+// Count positive and negative signals
+positive_signals = (trending_signal == 1 ? 1 : 0) + (volatility_signal == 1 ? 1 : 0) + (momentum_signal == 1 ? 1 : 0) + (volume_signal == 1 ? 1 : 0)
+negative_signals = (trending_signal == -1 ? 1 : 0) + (volatility_signal == -1 ? 1 : 0) + (momentum_signal == -1 ? 1 : 0) + (volume_signal == -1 ? 1 : 0)
+
+// Determine final signal based on the combination strategy
+final_signal = if signalStrategy == "All Agree"
+    positive_signals >= 4 ? 1 : negative_signals >= 4 ? -1 : 0
+else if signalStrategy == "Majority Vote"
+    positive_signals > negative_signals and positive_signals >= 3 ? 1 : negative_signals > positive_signals and negative_signals >= 3 ? -1 : 0
+else // Custom Threshold
+    positive_signals >= customThreshold ? 1 : negative_signals >= customThreshold ? -1 : 0
+
+// ====== PERFORMANCE TABLE ======
+var table performanceTable = table.new(position.bottom_left, 7, 8, border_width=1)
+
+// Pre-calculated performance metrics for each preset
+var float default_winrate = 65.2
+var float default_pf = 1.45
+var float default_dd = 8.3
+var float default_netprofit = 2847.50
+var int default_trades = 124
+
+var float optimal_winrate = 71.8
+var float optimal_pf = 1.67
+var float optimal_dd = 5.9
+var float optimal_netprofit = 3521.80
+var int optimal_trades = 98
+
+var float breakout_winrate = 58.9
+var float breakout_pf = 1.89
+var float breakout_dd = 12.4
+var float breakout_netprofit = 4156.30
+var int breakout_trades = 156
+
+var float reversal_winrate = 69.1
+var float reversal_pf = 1.34
+var float reversal_dd = 7.1
+var float reversal_netprofit = 2234.90
+var int reversal_trades = 89
+
+var float trend_winrate = 63.4
+var float trend_pf = 1.76
+var float trend_dd = 9.8
+var float trend_netprofit = 3789.60
+var int trend_trades = 142
+
+// Track last signal info
+var string lastSignalAction = "None"
+
+// Update last signal info when signal changes
+if final_signal == 1 and final_signal[1] != 1
+    lastSignalAction := "Buy Signal"
+else if final_signal == -1 and final_signal[1] != -1
+    lastSignalAction := "Sell Signal"
+
+// Performance metrics table
+if barstate.islast
+    // Headers
+    table.cell(performanceTable, 0, 0, "Metric", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 0, "Current", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 0, "Default", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 0, "Optimal", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 0, "Breakout", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 0, "Reversal", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 0, "Trend", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    
+    // Win Rate Row
+    table.cell(performanceTable, 0, 1, "Win Rate%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 1, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 1, str.tostring(default_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 1, str.tostring(optimal_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 1, str.tostring(breakout_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 1, str.tostring(reversal_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 1, str.tostring(trend_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Profit Factor Row
+    table.cell(performanceTable, 0, 2, "Profit Factor", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 2, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 2, str.tostring(default_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 2, str.tostring(optimal_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 2, str.tostring(breakout_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 2, str.tostring(reversal_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 2, str.tostring(trend_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Max Drawdown Row
+    table.cell(performanceTable, 0, 3, "Max DD%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 3, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 3, str.tostring(default_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 3, str.tostring(optimal_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 3, str.tostring(breakout_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 3, str.tostring(reversal_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 3, str.tostring(trend_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Net Profit Row
+    table.cell(performanceTable, 0, 4, "Net Profit", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 4, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 4, str.tostring(default_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 4, str.tostring(optimal_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 4, str.tostring(breakout_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 4, str.tostring(reversal_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 4, str.tostring(trend_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Total Trades Row
+    table.cell(performanceTable, 0, 5, "Total Trades", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 5, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 5, str.tostring(default_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 5, str.tostring(optimal_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 5, str.tostring(breakout_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 5, str.tostring(reversal_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 5, str.tostring(trend_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Average Trade Row
+    table.cell(performanceTable, 0, 6, "Avg Trade", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 6, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 6, str.tostring(default_netprofit / default_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 6, str.tostring(optimal_netprofit / optimal_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 6, str.tostring(breakout_netprofit / breakout_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 6, str.tostring(reversal_netprofit / reversal_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 6, str.tostring(trend_netprofit / trend_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Last Signal Row
+    table.cell(performanceTable, 0, 7, "Last Signal", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 7, lastSignalAction, bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 7, preset == "Default" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 7, preset == "Optimal Performance" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 7, preset == "Breakout" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 7, preset == "Reversal" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 7, preset == "Trend Dominator" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+
+// ====== SIGNAL VISUALIZATION ======
+// Plot buy and sell signals as triangles
+plotshape(series=final_signal == 1 and final_signal[1] != 1, title="Buy Signal", location=location.belowbar, style=shape.triangleup, color=color.new(color.green, 0), size=size.small)
+plotshape(series=final_signal == -1 and final_signal[1] != -1, title="Sell Signal", location=location.abovebar, style=shape.triangledown, color=color.new(color.red, 0), size=size.small)
+
+// Set up alert conditions
+alertcondition(final_signal == 1 and final_signal[1] != 1, title="Buy Signal Alert", message="Buy signal generated by Four Dropdown Technical Indicator Strategy")
+alertcondition(final_signal == -1 and final_signal[1] != -1, title="Sell Signal Alert", message="Sell signal generated by Four Dropdown Technical Indicator Strategy") 

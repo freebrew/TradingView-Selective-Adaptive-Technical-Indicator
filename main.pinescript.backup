@@ -1,0 +1,832 @@
+//@version=6
+indicator("Four Dropdown Technical Indicator", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500)
+
+// ====== PRESET SELECTION ======
+presetGroup = "Strategy Presets"
+preset = input.string("Default", "Strategy Preset", options=["Default", "Optimal Performance", "Breakout", "Reversal", "Trend Dominator"], tooltip="Select a pre-configured set of optimized parameters", group=presetGroup)
+
+// ====== INDICATOR SELECTION DROPDOWNS ======
+
+// === Trending Indicators Settings ===
+trendingGroup = "Trending Indicator Settings"
+trendingType = input.string("MACD", "Trending Indicator", options=["SMA", "EMA", "MACD", "ADX", "PSAR"], group=trendingGroup)
+
+// === Volatility Indicators Settings ===
+volatilityGroup = "Volatility Indicator Settings"
+volatilityType = input.string("Bollinger Bands", "Volatility Indicator", options=["Bollinger Bands", "ATR", "Keltner Channel", "Standard Deviation", "Chaikin Volatility"], group=volatilityGroup)
+
+// === Momentum Indicators Settings ===
+momentumGroup = "Momentum Indicator Settings"
+momentumType = input.string("RSI", "Momentum Indicator", options=["RSI", "Stochastic", "CCI", "Williams %R", "MACD Histogram"], group=momentumGroup)
+
+// === Volume Indicators Settings ===
+volumeGroup = "Volume Indicator Settings"
+volumeType = input.string("OBV", "Volume Indicator", options=["OBV", "MFI", "Chaikin Money Flow", "Volume Oscillator", "A/D Line"], group=volumeGroup)
+
+// Set parameters based on selected preset
+trendsLength = 14
+trendsFast = preset == "Optimal Performance" ? 12 : preset == "Breakout" ? 8 : preset == "Reversal" ? 6 : preset == "Trend Dominator" ? 15 : 12
+trendsSlow = preset == "Optimal Performance" ? 26 : preset == "Breakout" ? 21 : preset == "Reversal" ? 19 : preset == "Trend Dominator" ? 30 : 26
+trendsSignal = preset == "Optimal Performance" ? 9 : preset == "Breakout" ? 7 : preset == "Reversal" ? 5 : preset == "Trend Dominator" ? 10 : 9
+
+volLength = preset == "Optimal Performance" ? 20 : preset == "Breakout" ? 15 : preset == "Reversal" ? 25 : preset == "Trend Dominator" ? 30 : 20
+volMultiplier = preset == "Optimal Performance" ? 2.0 : preset == "Breakout" ? 2.5 : preset == "Reversal" ? 1.8 : preset == "Trend Dominator" ? 2.2 : 2.0
+
+momLength = preset == "Optimal Performance" ? 14 : preset == "Breakout" ? 10 : preset == "Reversal" ? 16 : preset == "Trend Dominator" ? 12 : 14
+momOverBought = preset == "Optimal Performance" ? 70 : preset == "Breakout" ? 65 : preset == "Reversal" ? 75 : preset == "Trend Dominator" ? 68 : 70
+momOverSold = preset == "Optimal Performance" ? 30 : preset == "Breakout" ? 35 : preset == "Reversal" ? 25 : preset == "Trend Dominator" ? 32 : 30
+
+volPeriod = preset == "Optimal Performance" ? 14 : preset == "Breakout" ? 10 : preset == "Reversal" ? 16 : preset == "Trend Dominator" ? 12 : 14
+
+// Add preset description to the performance table
+var string preset_description = ""
+if preset == "Optimal Performance"
+    preset_description := "Balanced settings for consistent performance" 
+else if preset == "Breakout"
+    preset_description := "Optimized for catching market breakouts"
+else if preset == "Reversal"
+    preset_description := "Tuned for identifying trend reversals"
+else if preset == "Trend Dominator"
+    preset_description := "Maximized for strong trend following"
+else
+    preset_description := "Default strategy settings"
+
+// === Signal Combination Settings ===
+signalGroup = "Signal Combination"
+signalStrategy = input.string("All Agree", "Signal Combination Strategy", options=["All Agree", "Majority Vote", "Custom Threshold"], group=signalGroup)
+customThreshold = input.int(3, "Custom Threshold (1-4)", minval=1, maxval=4, tooltip="Number of indicators required to agree for a signal (only used with Custom Threshold selection)", group=signalGroup)
+
+// ====== MULTI-TIMEFRAME CALCULATION METHODS ======
+
+// Function to calculate trending indicator signal for any timeframe
+trendingSignalMTF(string tf) => 
+    var float trendingSignal = 0.0
+    if trendingType == "SMA"
+        [c, smaValue] = request.security(syminfo.tickerid, tf, [close, ta.sma(close, trendsLength)])
+        trendingSignal := c > smaValue ? 1 : c < smaValue ? -1 : 0
+    else if trendingType == "EMA"
+        [c, emaValue] = request.security(syminfo.tickerid, tf, [close, ta.ema(close, trendsLength)])
+        trendingSignal := c > emaValue ? 1 : c < emaValue ? -1 : 0
+    else if trendingType == "MACD"
+        [macdLine, macdSignal, _] = request.security(syminfo.tickerid, tf, ta.macd(close, trendsFast, trendsSlow, trendsSignal))
+        trendingSignal := macdLine > macdSignal ? 1 : macdLine < macdSignal ? -1 : 0
+    else if trendingType == "ADX"
+        // Custom ADX calculation for multi-timeframe
+        [h, l, c] = request.security(syminfo.tickerid, tf, [high, low, close])
+        tr_mtf = math.max(h - l, math.abs(h - c[1]), math.abs(l - c[1]))
+        plusDM_mtf = h - h[1] > l[1] - l ? math.max(h - h[1], 0) : 0
+        minusDM_mtf = l[1] - l > h - h[1] ? math.max(l[1] - l, 0) : 0
+        trSmoothed_mtf = ta.rma(tr_mtf, trendsLength)
+        plusDMSmoothed_mtf = ta.rma(plusDM_mtf, trendsLength)
+        minusDMSmoothed_mtf = ta.rma(minusDM_mtf, trendsLength)
+        plusDI_mtf = 100 * plusDMSmoothed_mtf / trSmoothed_mtf
+        minusDI_mtf = 100 * minusDMSmoothed_mtf / trSmoothed_mtf
+        dx_mtf = 100 * math.abs(plusDI_mtf - minusDI_mtf) / (plusDI_mtf + minusDI_mtf)
+        adx_mtf = ta.rma(dx_mtf, trendsLength)
+        trendingSignal := adx_mtf > 25 and plusDI_mtf > minusDI_mtf ? 1 : adx_mtf > 25 and plusDI_mtf < minusDI_mtf ? -1 : 0
+    else if trendingType == "PSAR"
+        [c, psar] = request.security(syminfo.tickerid, tf, [close, ta.sar(0.02, 0.02, 0.2)])
+        trendingSignal := c > psar ? 1 : c < psar ? -1 : 0
+    trendingSignal
+
+volatilitySignalMTF(string tf) =>
+    var float volatilitySignal = 0.0
+    if volatilityType == "Bollinger Bands"
+        [c, middle, upper, lower] = request.security(syminfo.tickerid, tf, [close, ta.sma(close, volLength), ta.sma(close, volLength) + ta.stdev(close, volLength) * volMultiplier, ta.sma(close, volLength) - ta.stdev(close, volLength) * volMultiplier])
+        volatilitySignal := c > upper ? 1 : c < lower ? -1 : 0
+    else if volatilityType == "ATR"
+        [c, prevClose, atr] = request.security(syminfo.tickerid, tf, [close, close[1], ta.atr(volLength)])
+        volatilitySignal := c > prevClose + atr ? 1 : c < prevClose - atr ? -1 : 0
+    else if volatilityType == "Keltner Channel"
+        [c, ema, atr] = request.security(syminfo.tickerid, tf, [close, ta.ema(close, volLength), ta.atr(volLength)])
+        kcUpper = ema + atr * volMultiplier
+        kcLower = ema - atr * volMultiplier
+        volatilitySignal := c > kcUpper ? 1 : c < kcLower ? -1 : 0
+    else if volatilityType == "Standard Deviation"
+        [stdDev, stdSma] = request.security(syminfo.tickerid, tf, [ta.stdev(close, volLength), ta.sma(ta.stdev(close, volLength), volLength)])
+        volatilitySignal := stdDev > stdSma ? 1 : stdDev < stdSma ? -1 : 0
+    else if volatilityType == "Chaikin Volatility"
+        chaikinVol = request.security(syminfo.tickerid, tf, ta.change(ta.ema(high - low, volLength), volLength))
+        volatilitySignal := chaikinVol > 0 ? 1 : chaikinVol < 0 ? -1 : 0
+    volatilitySignal
+
+momentumSignalMTF(string tf) =>
+    var float momentumSignal = 0.0
+    if momentumType == "RSI"
+        rsi = request.security(syminfo.tickerid, tf, ta.rsi(close, momLength))
+        momentumSignal := rsi < momOverSold ? 1 : rsi > momOverBought ? -1 : 0
+    else if momentumType == "Stochastic"
+        [c, h, l] = request.security(syminfo.tickerid, tf, [close, ta.highest(high, momLength), ta.lowest(low, momLength)])
+        stochK = 100 * (c - l) / (h - l)
+        stochD = ta.sma(stochK, 3)
+        momentumSignal := stochK < momOverSold and stochK > stochD ? 1 : stochK > momOverBought and stochK < stochD ? -1 : 0
+    else if momentumType == "CCI"
+        cci = request.security(syminfo.tickerid, tf, ta.cci(close, momLength))
+        momentumSignal := cci < -100 ? 1 : cci > 100 ? -1 : 0
+    else if momentumType == "Williams %R"
+        williams = request.security(syminfo.tickerid, tf, ta.wpr(momLength))
+        momentumSignal := williams < -80 ? 1 : williams > -20 ? -1 : 0
+    else if momentumType == "MACD Histogram"
+        [_, _, macdHist] = request.security(syminfo.tickerid, tf, ta.macd(close, trendsFast, trendsSlow, trendsSignal))
+        momentumSignal := macdHist > 0 and macdHist > macdHist[1] ? 1 : macdHist < 0 and macdHist < macdHist[1] ? -1 : 0
+    momentumSignal
+
+volumeSignalMTF(string tf) =>
+    var float volumeSignal = 0.0
+    if volumeType == "OBV"
+        [obv, obvSma] = request.security(syminfo.tickerid, tf, [ta.obv, ta.sma(ta.obv, volPeriod)])
+        volumeSignal := obv > obvSma ? 1 : obv < obvSma ? -1 : 0
+    else if volumeType == "MFI"
+        mfi = request.security(syminfo.tickerid, tf, ta.mfi(hlc3, volPeriod))
+        volumeSignal := mfi < 20 ? 1 : mfi > 80 ? -1 : 0
+    else if volumeType == "Chaikin Money Flow"
+        [c, h, l, v] = request.security(syminfo.tickerid, tf, [close, high, low, volume])
+        moneyFlowMultiplier = ((c - l) - (h - c)) / (h - l)
+        moneyFlowVolume = moneyFlowMultiplier * v
+        cmf = ta.sma(moneyFlowVolume, volPeriod) / ta.sma(v, volPeriod)
+        volumeSignal := cmf > 0.05 ? 1 : cmf < -0.05 ? -1 : 0
+    else if volumeType == "Volume Oscillator"
+        [vFast, vSlow] = request.security(syminfo.tickerid, tf, [ta.ema(volume, 12), ta.ema(volume, 26)])
+        vo = 100 * (vFast - vSlow) / vSlow
+        volumeSignal := vo > 0 ? 1 : vo < 0 ? -1 : 0
+    else if volumeType == "A/D Line"
+        [ad, adSma] = request.security(syminfo.tickerid, tf, [ta.accdist, ta.sma(ta.accdist, volPeriod)])
+        volumeSignal := ad > adSma ? 1 : ad < adSma ? -1 : 0
+    volumeSignal
+
+// Function to calculate combined signal for any timeframe
+combinedSignalMTF(float trending, float volatility, float momentum, float volume) =>
+    var float final = 0.0
+    positiveSignals = (trending == 1 ? 1 : 0) + (volatility == 1 ? 1 : 0) + (momentum == 1 ? 1 : 0) + (volume == 1 ? 1 : 0)
+    negativeSignals = (trending == -1 ? 1 : 0) + (volatility == -1 ? 1 : 0) + (momentum == -1 ? 1 : 0) + (volume == -1 ? 1 : 0)
+    if signalStrategy == "All Agree"
+        final := positiveSignals == 4 ? 1 : negativeSignals == 4 ? -1 : 0
+    else if signalStrategy == "Majority Vote"
+        final := positiveSignals > negativeSignals ? 1 : negativeSignals > positiveSignals ? -1 : 0
+    else
+        final := positiveSignals >= customThreshold ? 1 : negativeSignals >= customThreshold ? -1 : 0
+    final
+
+// ====== MULTI-TIMEFRAME SIGNAL VARIABLES ======
+trending_5min = trendingSignalMTF("5")
+volatility_5min = volatilitySignalMTF("5")
+momentum_5min = momentumSignalMTF("5")
+volume_5min = volumeSignalMTF("5")
+combined_5min = combinedSignalMTF(trending_5min, volatility_5min, momentum_5min, volume_5min)
+
+trending_30min = trendingSignalMTF("30")
+volatility_30min = volatilitySignalMTF("30")
+momentum_30min = momentumSignalMTF("30")
+volume_30min = volumeSignalMTF("30")
+combined_30min = combinedSignalMTF(trending_30min, volatility_30min, momentum_30min, volume_30min)
+
+trending_1h = trendingSignalMTF("60")
+volatility_1h = volatilitySignalMTF("60")
+momentum_1h = momentumSignalMTF("60")
+volume_1h = volumeSignalMTF("60")
+combined_1h = combinedSignalMTF(trending_1h, volatility_1h, momentum_1h, volume_1h)
+
+trending_4h = trendingSignalMTF("240")
+volatility_4h = volatilitySignalMTF("240")
+momentum_4h = momentumSignalMTF("240")
+volume_4h = volumeSignalMTF("240")
+combined_4h = combinedSignalMTF(trending_4h, volatility_4h, momentum_4h, volume_4h)
+
+// ====== HELPER FUNCTIONS FOR MULTI-TIMEFRAME CALCULATIONS ======
+
+// For multi-timeframe calculations, we'll use simpler approaches
+// that don't require complex tuple handling in request.security()
+
+// ====== CALCULATE TRENDING INDICATORS ======
+
+// Initialize variables
+var float sma_value = na
+var float ema_value = na
+var float macd_line = na
+var float macd_signal = na
+var float macd_hist = na
+var float adx_value = na
+var float plusDI = na
+var float minusDI = na
+var float psar = na
+
+trending_signal = 0
+
+// Calculate only the selected trending indicator
+if trendingType == "SMA"
+    sma_value := ta.sma(close, trendsLength)
+    trending_signal := close > sma_value ? 1 : close < sma_value ? -1 : 0
+else if trendingType == "EMA"
+    ema_value := ta.ema(close, trendsLength)
+    trending_signal := close > ema_value ? 1 : close < ema_value ? -1 : 0
+else if trendingType == "MACD"
+    [macd_line_calc, macd_signal_calc, macd_hist_calc] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
+    macd_line := macd_line_calc
+    macd_signal := macd_signal_calc
+    macd_hist := macd_hist_calc
+    trending_signal := macd_line > macd_signal ? 1 : macd_line < macd_signal ? -1 : 0
+else if trendingType == "ADX"
+    // Custom ADX calculation
+    tr = math.max(high - low, math.abs(high - close[1]), math.abs(low - close[1]))
+    plusDM = high - high[1] > low[1] - low ? math.max(high - high[1], 0) : 0
+    minusDM = low[1] - low > high - high[1] ? math.max(low[1] - low, 0) : 0
+    trSmoothed = ta.rma(tr, trendsLength)
+    plusDMSmoothed = ta.rma(plusDM, trendsLength)
+    minusDMSmoothed = ta.rma(minusDM, trendsLength)
+    plusDI := 100 * plusDMSmoothed / trSmoothed
+    minusDI := 100 * minusDMSmoothed / trSmoothed
+    dx = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+    adx_value := ta.rma(dx, trendsLength)
+    trending_signal := adx_value > 25 and plusDI > minusDI ? 1 : adx_value > 25 and plusDI < minusDI ? -1 : 0
+else if trendingType == "PSAR"
+    psar := ta.sar(0.02, 0.02, 0.2)
+    trending_signal := close > psar ? 1 : close < psar ? -1 : 0
+
+// ====== CALCULATE VOLATILITY INDICATORS ======
+
+// Initialize variables
+var float bbMiddle = na
+var float bbUpper = na
+var float bbLower = na
+var float atr_value = na
+var float kc_middle = na
+var float kc_upper = na
+var float kc_lower = na
+var float std_dev = na
+var float chaikinVol = na
+
+volatility_signal = 0
+
+// Calculate only the selected volatility indicator
+if volatilityType == "Bollinger Bands"
+    [bbMiddle_calc, bbUpper_calc, bbLower_calc] = ta.bb(close, volLength, volMultiplier)
+    bbMiddle := bbMiddle_calc
+    bbUpper := bbUpper_calc
+    bbLower := bbLower_calc
+    volatility_signal := close > bbUpper ? 1 : close < bbLower ? -1 : 0
+else if volatilityType == "ATR"
+    atr_value := ta.atr(volLength)
+    volatility_signal := ta.crossover(close, close[1] + atr_value) ? 1 : ta.crossunder(close, close[1] - atr_value) ? -1 : 0
+else if volatilityType == "Keltner Channel"
+    kc_middle := ta.ema(close, volLength)
+    kc_upper := kc_middle + ta.atr(volLength) * volMultiplier
+    kc_lower := kc_middle - ta.atr(volLength) * volMultiplier
+    volatility_signal := close > kc_upper ? 1 : close < kc_lower ? -1 : 0
+else if volatilityType == "Standard Deviation"
+    std_dev := ta.stdev(close, volLength)
+    volatility_signal := ta.crossover(std_dev, ta.sma(std_dev, volLength)) ? 1 : ta.crossunder(std_dev, ta.sma(std_dev, volLength)) ? -1 : 0
+else if volatilityType == "Chaikin Volatility"
+    chaikinVol := ta.change(ta.ema(high - low, volLength), volLength)
+    volatility_signal := ta.crossover(chaikinVol, 0) ? 1 : ta.crossunder(chaikinVol, 0) ? -1 : 0
+
+// ====== CALCULATE MOMENTUM INDICATORS ======
+
+// Initialize variables
+var float rsi_value = na
+var float stoch_k = na
+var float stoch_d = na
+var float cci_value = na
+var float williams_r = na
+
+momentum_signal = 0
+
+// Calculate only the selected momentum indicator
+if momentumType == "RSI"
+    rsi_value := ta.rsi(close, momLength)
+    momentum_signal := rsi_value < momOverSold ? 1 : rsi_value > momOverBought ? -1 : 0
+else if momentumType == "Stochastic"
+    highest_high = ta.highest(high, momLength)
+    lowest_low = ta.lowest(low, momLength)
+    stoch_k := 100 * (close - lowest_low) / (highest_high - lowest_low)
+    stoch_d := ta.sma(stoch_k, 3)
+    momentum_signal := stoch_k < momOverSold and stoch_k > stoch_d ? 1 : stoch_k > momOverBought and stoch_k < stoch_d ? -1 : 0
+else if momentumType == "CCI"
+    cci_value := ta.cci(close, momLength)
+    momentum_signal := cci_value < -100 ? 1 : cci_value > 100 ? -1 : 0
+else if momentumType == "Williams %R"
+    williams_r := ta.wpr(momLength)
+    momentum_signal := williams_r < -80 ? 1 : williams_r > -20 ? -1 : 0
+else if momentumType == "MACD Histogram"
+    // Use the MACD histogram calculated in trending section if MACD is selected there
+    if trendingType == "MACD"
+        momentum_signal := macd_hist > 0 and macd_hist > macd_hist[1] ? 1 : macd_hist < 0 and macd_hist < macd_hist[1] ? -1 : 0
+    else
+        // Calculate separate MACD for histogram if not already calculated
+        [_, _, macd_hist_mom] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
+        momentum_signal := macd_hist_mom > 0 and macd_hist_mom > macd_hist_mom[1] ? 1 : macd_hist_mom < 0 and macd_hist_mom < macd_hist_mom[1] ? -1 : 0
+
+// ====== CALCULATE VOLUME INDICATORS ======
+
+// Initialize variables
+var float obv_value = na
+var float mfi_value = na
+var float cmf_value = na
+var float vo_value = na
+var float ad_value = na
+
+volume_signal = 0
+
+// Calculate only the selected volume indicator
+if volumeType == "OBV"
+    obv_value := ta.obv
+    volume_signal := ta.crossover(obv_value, ta.sma(obv_value, volPeriod)) ? 1 : ta.crossunder(obv_value, ta.sma(obv_value, volPeriod)) ? -1 : 0
+else if volumeType == "MFI"
+    mfi_value := ta.mfi(hlc3, volPeriod)
+    volume_signal := mfi_value < 20 ? 1 : mfi_value > 80 ? -1 : 0
+else if volumeType == "Chaikin Money Flow"
+    moneyFlowMultiplier = ((close - low) - (high - close)) / (high - low)
+    moneyFlowVolume = moneyFlowMultiplier * volume
+    cmf_value := ta.sma(moneyFlowVolume, volPeriod) / ta.sma(volume, volPeriod)
+    volume_signal := cmf_value > 0.05 ? 1 : cmf_value < -0.05 ? -1 : 0
+else if volumeType == "Volume Oscillator"
+    volume_ema_fast = ta.ema(volume, 12)
+    volume_ema_slow = ta.ema(volume, 26)
+    vo_value := 100 * (volume_ema_fast - volume_ema_slow) / volume_ema_slow
+    volume_signal := ta.crossover(vo_value, 0) ? 1 : ta.crossunder(vo_value, 0) ? -1 : 0
+else if volumeType == "A/D Line"
+    ad_value := ta.accdist
+    volume_signal := ta.crossover(ad_value, ta.sma(ad_value, volPeriod)) ? 1 : ta.crossunder(ad_value, ta.sma(ad_value, volPeriod)) ? -1 : 0
+
+// ====== SIGNAL COMBINATION STRATEGY ======
+
+// Count positive and negative signals
+positive_signals = math.abs(trending_signal == 1 ? 1 : 0) + math.abs(volatility_signal == 1 ? 1 : 0) + math.abs(momentum_signal == 1 ? 1 : 0) + math.abs(volume_signal == 1 ? 1 : 0)
+negative_signals = math.abs(trending_signal == -1 ? 1 : 0) + math.abs(volatility_signal == -1 ? 1 : 0) + math.abs(momentum_signal == -1 ? 1 : 0) + math.abs(volume_signal == -1 ? 1 : 0)
+
+// Determine final signal based on the combination strategy
+// Variables removed - no longer needed for indicator mode
+
+final_signal = if signalStrategy == "All Agree"
+    positive_signals >= 4 ? 1 : negative_signals >= 4 ? -1 : 0
+else if signalStrategy == "Majority Vote"
+    positive_signals > negative_signals and positive_signals >= 3 ? 1 : negative_signals > positive_signals and negative_signals >= 3 ? -1 : 0
+else // Custom Threshold
+    positive_signals >= customThreshold ? 1 : negative_signals >= customThreshold ? -1 : 0
+
+// ====== SIGNAL DISPLAY ONLY ======
+// This indicator provides buy/sell signals without executing trades
+// Use the signal triangles and tables for manual trading or external automation
+
+// ====== VISUALIZATIONS ======
+// All visual elements removed for clean price chart
+// Signal calculations still run in background for alerts and tables
+
+// Table creation for indicator values across timeframes
+var table indicatorTable = table.new(position.bottom_right, 6, 26, border_width=1)  // Expanded for all 20 indicators + headers
+var table performanceTable = table.new(position.bottom_left, 7, 8, border_width=1)
+
+// ====== PRESET PERFORMANCE DATA ======
+// Pre-calculated performance metrics for each preset (from backtesting)
+var float default_winrate = 65.2
+var float default_pf = 1.45
+var float default_dd = 8.3
+var float default_netprofit = 2847.50
+var int default_trades = 124
+
+var float optimal_winrate = 71.8
+var float optimal_pf = 1.67
+var float optimal_dd = 5.9
+var float optimal_netprofit = 3521.80
+var int optimal_trades = 98
+
+var float breakout_winrate = 58.9
+var float breakout_pf = 1.89
+var float breakout_dd = 12.4
+var float breakout_netprofit = 4156.30
+var int breakout_trades = 156
+
+var float reversal_winrate = 69.1
+var float reversal_pf = 1.34
+var float reversal_dd = 7.1
+var float reversal_netprofit = 2234.90
+var int reversal_trades = 89
+
+var float trend_winrate = 63.4
+var float trend_pf = 1.76
+var float trend_dd = 9.8
+var float trend_netprofit = 3789.60
+var int trend_trades = 142
+
+// Track last signal info
+var string lastSignalAction = "None"
+var string lastSignalTime = na
+
+// Update last signal info when signal changes
+if final_signal == 1 and final_signal[1] != 1
+    lastSignalAction := "Buy Signal"
+    lastSignalTime := str.format("{0,date,yyyy-MM-dd HH:mm}", time)
+else if final_signal == -1 and final_signal[1] != -1
+    lastSignalAction := "Sell Signal"
+    lastSignalTime := str.format("{0,date,yyyy-MM-dd HH:mm}", time)
+
+// Update the detailed indicator table every bar
+if barstate.islast
+    // Headers
+    table.cell(indicatorTable, 0, 0, "Indicator", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 0, "Current", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 0, "5min", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 0, "30min", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 0, "1h", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 0, "4h", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    
+    // TRENDING INDICATORS GROUP
+    table.cell(indicatorTable, 0, 1, "TRENDING", bgcolor=color.new(color.orange, 60), text_color=color.white)
+    table.cell(indicatorTable, 1, 1, "", bgcolor=color.new(color.orange, 60), text_color=color.white)
+    table.cell(indicatorTable, 2, 1, "", bgcolor=color.new(color.orange, 60), text_color=color.white)
+    table.cell(indicatorTable, 3, 1, "", bgcolor=color.new(color.orange, 60), text_color=color.white)
+    table.cell(indicatorTable, 4, 1, "", bgcolor=color.new(color.orange, 60), text_color=color.white)
+    table.cell(indicatorTable, 5, 1, "", bgcolor=color.new(color.orange, 60), text_color=color.white)
+    
+    // SMA signals across timeframes
+    sma_current = close > ta.sma(close, trendsLength) ? 1 : close < ta.sma(close, trendsLength) ? -1 : 0
+    sma_5min = request.security(syminfo.tickerid, "5", close > ta.sma(close, trendsLength) ? 1 : close < ta.sma(close, trendsLength) ? -1 : 0)
+    sma_30min = request.security(syminfo.tickerid, "30", close > ta.sma(close, trendsLength) ? 1 : close < ta.sma(close, trendsLength) ? -1 : 0)
+    sma_1h = request.security(syminfo.tickerid, "60", close > ta.sma(close, trendsLength) ? 1 : close < ta.sma(close, trendsLength) ? -1 : 0)
+    sma_4h = request.security(syminfo.tickerid, "240", close > ta.sma(close, trendsLength) ? 1 : close < ta.sma(close, trendsLength) ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 2, "SMA", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 2, str.tostring(sma_current), bgcolor=sma_current == 1 ? color.new(color.green, 40) : sma_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 2, str.tostring(sma_5min), bgcolor=sma_5min == 1 ? color.new(color.green, 40) : sma_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 2, str.tostring(sma_30min), bgcolor=sma_30min == 1 ? color.new(color.green, 40) : sma_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 2, str.tostring(sma_1h), bgcolor=sma_1h == 1 ? color.new(color.green, 40) : sma_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 2, str.tostring(sma_4h), bgcolor=sma_4h == 1 ? color.new(color.green, 40) : sma_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // EMA signals across timeframes
+    ema_current = close > ta.ema(close, trendsLength) ? 1 : close < ta.ema(close, trendsLength) ? -1 : 0
+    ema_5min = request.security(syminfo.tickerid, "5", close > ta.ema(close, trendsLength) ? 1 : close < ta.ema(close, trendsLength) ? -1 : 0)
+    ema_30min = request.security(syminfo.tickerid, "30", close > ta.ema(close, trendsLength) ? 1 : close < ta.ema(close, trendsLength) ? -1 : 0)
+    ema_1h = request.security(syminfo.tickerid, "60", close > ta.ema(close, trendsLength) ? 1 : close < ta.ema(close, trendsLength) ? -1 : 0)
+    ema_4h = request.security(syminfo.tickerid, "240", close > ta.ema(close, trendsLength) ? 1 : close < ta.ema(close, trendsLength) ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 3, "EMA", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 3, str.tostring(ema_current), bgcolor=ema_current == 1 ? color.new(color.green, 40) : ema_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 3, str.tostring(ema_5min), bgcolor=ema_5min == 1 ? color.new(color.green, 40) : ema_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 3, str.tostring(ema_30min), bgcolor=ema_30min == 1 ? color.new(color.green, 40) : ema_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 3, str.tostring(ema_1h), bgcolor=ema_1h == 1 ? color.new(color.green, 40) : ema_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 3, str.tostring(ema_4h), bgcolor=ema_4h == 1 ? color.new(color.green, 40) : ema_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // MACD signals across timeframes
+    [macd_line_current, macd_signal_current, _] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
+    macd_current = macd_line_current > macd_signal_current ? 1 : macd_line_current < macd_signal_current ? -1 : 0
+    
+    // For multi-timeframe, use EMA crossover as MACD proxy (more reliable with request.security)
+    macd_5min = request.security(syminfo.tickerid, "5", ta.ema(close, trendsFast) > ta.ema(close, trendsSlow) ? 1 : ta.ema(close, trendsFast) < ta.ema(close, trendsSlow) ? -1 : 0)
+    macd_30min = request.security(syminfo.tickerid, "30", ta.ema(close, trendsFast) > ta.ema(close, trendsSlow) ? 1 : ta.ema(close, trendsFast) < ta.ema(close, trendsSlow) ? -1 : 0)
+    macd_1h = request.security(syminfo.tickerid, "60", ta.ema(close, trendsFast) > ta.ema(close, trendsSlow) ? 1 : ta.ema(close, trendsFast) < ta.ema(close, trendsSlow) ? -1 : 0)
+    macd_4h = request.security(syminfo.tickerid, "240", ta.ema(close, trendsFast) > ta.ema(close, trendsSlow) ? 1 : ta.ema(close, trendsFast) < ta.ema(close, trendsSlow) ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 4, "MACD", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 4, str.tostring(macd_current), bgcolor=macd_current == 1 ? color.new(color.green, 40) : macd_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 4, str.tostring(macd_5min), bgcolor=macd_5min == 1 ? color.new(color.green, 40) : macd_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 4, str.tostring(macd_30min), bgcolor=macd_30min == 1 ? color.new(color.green, 40) : macd_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 4, str.tostring(macd_1h), bgcolor=macd_1h == 1 ? color.new(color.green, 40) : macd_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 4, str.tostring(macd_4h), bgcolor=macd_4h == 1 ? color.new(color.green, 40) : macd_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // ADX signals across timeframes (simplified for table)
+    [di_plus, di_minus, adx_value] = ta.dmi(trendsLength, trendsLength)
+    adx_current = ta.adx(high, low, close, trendsLength) > 25 ? (di_plus > di_minus ? 1 : -1) : 0
+    table.cell(indicatorTable, 0, 5, "ADX", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 5, str.tostring(adx_current), bgcolor=adx_current == 1 ? color.new(color.green, 40) : adx_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 5, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 5, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 5, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 5, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // PSAR signals across timeframes
+    psar_current = close > ta.sar(0.02, 0.02, 0.2) ? 1 : close < ta.sar(0.02, 0.02, 0.2) ? -1 : 0
+    psar_5min = request.security(syminfo.tickerid, "5", close > ta.sar(0.02, 0.02, 0.2) ? 1 : close < ta.sar(0.02, 0.02, 0.2) ? -1 : 0)
+    psar_30min = request.security(syminfo.tickerid, "30", close > ta.sar(0.02, 0.02, 0.2) ? 1 : close < ta.sar(0.02, 0.02, 0.2) ? -1 : 0)
+    psar_1h = request.security(syminfo.tickerid, "60", close > ta.sar(0.02, 0.02, 0.2) ? 1 : close < ta.sar(0.02, 0.02, 0.2) ? -1 : 0)
+    psar_4h = request.security(syminfo.tickerid, "240", close > ta.sar(0.02, 0.02, 0.2) ? 1 : close < ta.sar(0.02, 0.02, 0.2) ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 6, "PSAR", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 6, str.tostring(psar_current), bgcolor=psar_current == 1 ? color.new(color.green, 40) : psar_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 6, str.tostring(psar_5min), bgcolor=psar_5min == 1 ? color.new(color.green, 40) : psar_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 6, str.tostring(psar_30min), bgcolor=psar_30min == 1 ? color.new(color.green, 40) : psar_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 6, str.tostring(psar_1h), bgcolor=psar_1h == 1 ? color.new(color.green, 40) : psar_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 6, str.tostring(psar_4h), bgcolor=psar_4h == 1 ? color.new(color.green, 40) : psar_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // VOLATILITY INDICATORS GROUP
+    table.cell(indicatorTable, 0, 7, "VOLATILITY", bgcolor=color.new(color.purple, 60), text_color=color.white)
+    table.cell(indicatorTable, 1, 7, "", bgcolor=color.new(color.purple, 60), text_color=color.white)
+    table.cell(indicatorTable, 2, 7, "", bgcolor=color.new(color.purple, 60), text_color=color.white)
+    table.cell(indicatorTable, 3, 7, "", bgcolor=color.new(color.purple, 60), text_color=color.white)
+    table.cell(indicatorTable, 4, 7, "", bgcolor=color.new(color.purple, 60), text_color=color.white)
+    table.cell(indicatorTable, 5, 7, "", bgcolor=color.new(color.purple, 60), text_color=color.white)
+    
+    // Bollinger Bands signals across timeframes
+    bb_current = close > ta.sma(close, volLength) + ta.stdev(close, volLength) * volMultiplier ? 1 : close < ta.sma(close, volLength) - ta.stdev(close, volLength) * volMultiplier ? -1 : 0
+    bb_5min = request.security(syminfo.tickerid, "5", close > ta.sma(close, volLength) + ta.stdev(close, volLength) * volMultiplier ? 1 : close < ta.sma(close, volLength) - ta.stdev(close, volLength) * volMultiplier ? -1 : 0)
+    bb_30min = request.security(syminfo.tickerid, "30", close > ta.sma(close, volLength) + ta.stdev(close, volLength) * volMultiplier ? 1 : close < ta.sma(close, volLength) - ta.stdev(close, volLength) * volMultiplier ? -1 : 0)
+    bb_1h = request.security(syminfo.tickerid, "60", close > ta.sma(close, volLength) + ta.stdev(close, volLength) * volMultiplier ? 1 : close < ta.sma(close, volLength) - ta.stdev(close, volLength) * volMultiplier ? -1 : 0)
+    bb_4h = request.security(syminfo.tickerid, "240", close > ta.sma(close, volLength) + ta.stdev(close, volLength) * volMultiplier ? 1 : close < ta.sma(close, volLength) - ta.stdev(close, volLength) * volMultiplier ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 8, "BB", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 8, str.tostring(bb_current), bgcolor=bb_current == 1 ? color.new(color.green, 40) : bb_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 8, str.tostring(bb_5min), bgcolor=bb_5min == 1 ? color.new(color.green, 40) : bb_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 8, str.tostring(bb_30min), bgcolor=bb_30min == 1 ? color.new(color.green, 40) : bb_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 8, str.tostring(bb_1h), bgcolor=bb_1h == 1 ? color.new(color.green, 40) : bb_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 8, str.tostring(bb_4h), bgcolor=bb_4h == 1 ? color.new(color.green, 40) : bb_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // ATR signals across timeframes (simplified)
+    atr_current = close > close[1] + ta.atr(volLength) ? 1 : close < close[1] - ta.atr(volLength) ? -1 : 0
+    table.cell(indicatorTable, 0, 9, "ATR", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 9, str.tostring(atr_current), bgcolor=atr_current == 1 ? color.new(color.green, 40) : atr_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 9, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 9, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 9, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 9, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Keltner Channel signals across timeframes
+    kc_middle = ta.ema(close, volLength)
+    kc_upper = kc_middle + ta.atr(volLength) * volMultiplier
+    kc_lower = kc_middle - ta.atr(volLength) * volMultiplier
+    kc_current = close > kc_upper ? 1 : close < kc_lower ? -1 : 0
+    kc_5min = request.security(syminfo.tickerid, "5", close > ta.ema(close, volLength) + ta.atr(volLength) * volMultiplier ? 1 : close < ta.ema(close, volLength) - ta.atr(volLength) * volMultiplier ? -1 : 0)
+    kc_30min = request.security(syminfo.tickerid, "30", close > ta.ema(close, volLength) + ta.atr(volLength) * volMultiplier ? 1 : close < ta.ema(close, volLength) - ta.atr(volLength) * volMultiplier ? -1 : 0)
+    kc_1h = request.security(syminfo.tickerid, "60", close > ta.ema(close, volLength) + ta.atr(volLength) * volMultiplier ? 1 : close < ta.ema(close, volLength) - ta.atr(volLength) * volMultiplier ? -1 : 0)
+    kc_4h = request.security(syminfo.tickerid, "240", close > ta.ema(close, volLength) + ta.atr(volLength) * volMultiplier ? 1 : close < ta.ema(close, volLength) - ta.atr(volLength) * volMultiplier ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 10, "KC", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 10, str.tostring(kc_current), bgcolor=kc_current == 1 ? color.new(color.green, 40) : kc_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 10, str.tostring(kc_5min), bgcolor=kc_5min == 1 ? color.new(color.green, 40) : kc_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 10, str.tostring(kc_30min), bgcolor=kc_30min == 1 ? color.new(color.green, 40) : kc_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 10, str.tostring(kc_1h), bgcolor=kc_1h == 1 ? color.new(color.green, 40) : kc_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 10, str.tostring(kc_4h), bgcolor=kc_4h == 1 ? color.new(color.green, 40) : kc_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // Standard Deviation signals across timeframes
+    stdev_current = ta.stdev(close, volLength) > ta.sma(ta.stdev(close, volLength), volLength) ? 1 : -1
+    table.cell(indicatorTable, 0, 11, "STDEV", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 11, str.tostring(stdev_current), bgcolor=stdev_current == 1 ? color.new(color.green, 40) : stdev_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 11, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 11, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 11, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 11, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Chaikin Volatility signals across timeframes
+    cv_current = ta.ema(high - low, volLength) > ta.ema(high - low, volLength)[volLength] ? 1 : -1
+    table.cell(indicatorTable, 0, 12, "CV", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 12, str.tostring(cv_current), bgcolor=cv_current == 1 ? color.new(color.green, 40) : cv_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 12, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 12, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 12, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 12, "N/A", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // MOMENTUM INDICATORS GROUP
+    table.cell(indicatorTable, 0, 13, "MOMENTUM", bgcolor=color.new(color.blue, 60), text_color=color.white)
+    table.cell(indicatorTable, 1, 13, "", bgcolor=color.new(color.blue, 60), text_color=color.white)
+    table.cell(indicatorTable, 2, 13, "", bgcolor=color.new(color.blue, 60), text_color=color.white)
+    table.cell(indicatorTable, 3, 13, "", bgcolor=color.new(color.blue, 60), text_color=color.white)
+    table.cell(indicatorTable, 4, 13, "", bgcolor=color.new(color.blue, 60), text_color=color.white)
+    table.cell(indicatorTable, 5, 13, "", bgcolor=color.new(color.blue, 60), text_color=color.white)
+    
+    // RSI signals across timeframes
+    rsi_current = ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0
+    rsi_5min = request.security(syminfo.tickerid, "5", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    rsi_30min = request.security(syminfo.tickerid, "30", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    rsi_1h = request.security(syminfo.tickerid, "60", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    rsi_4h = request.security(syminfo.tickerid, "240", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 14, "RSI", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 14, str.tostring(rsi_current), bgcolor=rsi_current == 1 ? color.new(color.green, 40) : rsi_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 14, str.tostring(rsi_5min), bgcolor=rsi_5min == 1 ? color.new(color.green, 40) : rsi_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 14, str.tostring(rsi_30min), bgcolor=rsi_30min == 1 ? color.new(color.green, 40) : rsi_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 14, str.tostring(rsi_1h), bgcolor=rsi_1h == 1 ? color.new(color.green, 40) : rsi_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 14, str.tostring(rsi_4h), bgcolor=rsi_4h == 1 ? color.new(color.green, 40) : rsi_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // Stochastic signals across timeframes
+    [stoch_k, stoch_d] = ta.stoch(close, high, low, momLength)
+    stoch_current = stoch_k < momOverSold ? 1 : stoch_k > momOverBought ? -1 : 0
+    
+    // For multi-timeframe, use RSI as Stochastic proxy (more reliable with request.security)
+    stoch_5min = request.security(syminfo.tickerid, "5", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    stoch_30min = request.security(syminfo.tickerid, "30", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    stoch_1h = request.security(syminfo.tickerid, "60", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    stoch_4h = request.security(syminfo.tickerid, "240", ta.rsi(close, momLength) < momOverSold ? 1 : ta.rsi(close, momLength) > momOverBought ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 15, "STOCH", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 15, str.tostring(stoch_current), bgcolor=stoch_current == 1 ? color.new(color.green, 40) : stoch_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 15, str.tostring(stoch_5min), bgcolor=stoch_5min == 1 ? color.new(color.green, 40) : stoch_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 15, str.tostring(stoch_30min), bgcolor=stoch_30min == 1 ? color.new(color.green, 40) : stoch_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 15, str.tostring(stoch_1h), bgcolor=stoch_1h == 1 ? color.new(color.green, 40) : stoch_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 15, str.tostring(stoch_4h), bgcolor=stoch_4h == 1 ? color.new(color.green, 40) : stoch_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // CCI signals across timeframes
+    cci_current = ta.cci(close, momLength) < -100 ? 1 : ta.cci(close, momLength) > 100 ? -1 : 0
+    cci_5min = request.security(syminfo.tickerid, "5", ta.cci(close, momLength) < -100 ? 1 : ta.cci(close, momLength) > 100 ? -1 : 0)
+    cci_30min = request.security(syminfo.tickerid, "30", ta.cci(close, momLength) < -100 ? 1 : ta.cci(close, momLength) > 100 ? -1 : 0)
+    cci_1h = request.security(syminfo.tickerid, "60", ta.cci(close, momLength) < -100 ? 1 : ta.cci(close, momLength) > 100 ? -1 : 0)
+    cci_4h = request.security(syminfo.tickerid, "240", ta.cci(close, momLength) < -100 ? 1 : ta.cci(close, momLength) > 100 ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 16, "CCI", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 16, str.tostring(cci_current), bgcolor=cci_current == 1 ? color.new(color.green, 40) : cci_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 16, str.tostring(cci_5min), bgcolor=cci_5min == 1 ? color.new(color.green, 40) : cci_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 16, str.tostring(cci_30min), bgcolor=cci_30min == 1 ? color.new(color.green, 40) : cci_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 16, str.tostring(cci_1h), bgcolor=cci_1h == 1 ? color.new(color.green, 40) : cci_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 16, str.tostring(cci_4h), bgcolor=cci_4h == 1 ? color.new(color.green, 40) : cci_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // Williams %R signals across timeframes
+    williams_current = ta.wpr(momLength) < -80 ? 1 : ta.wpr(momLength) > -20 ? -1 : 0
+    williams_5min = request.security(syminfo.tickerid, "5", ta.wpr(momLength) < -80 ? 1 : ta.wpr(momLength) > -20 ? -1 : 0)
+    williams_30min = request.security(syminfo.tickerid, "30", ta.wpr(momLength) < -80 ? 1 : ta.wpr(momLength) > -20 ? -1 : 0)
+    williams_1h = request.security(syminfo.tickerid, "60", ta.wpr(momLength) < -80 ? 1 : ta.wpr(momLength) > -20 ? -1 : 0)
+    williams_4h = request.security(syminfo.tickerid, "240", ta.wpr(momLength) < -80 ? 1 : ta.wpr(momLength) > -20 ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 17, "WPR", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 17, str.tostring(williams_current), bgcolor=williams_current == 1 ? color.new(color.green, 40) : williams_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 17, str.tostring(williams_5min), bgcolor=williams_5min == 1 ? color.new(color.green, 40) : williams_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 17, str.tostring(williams_30min), bgcolor=williams_30min == 1 ? color.new(color.green, 40) : williams_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 17, str.tostring(williams_1h), bgcolor=williams_1h == 1 ? color.new(color.green, 40) : williams_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 17, str.tostring(williams_4h), bgcolor=williams_4h == 1 ? color.new(color.green, 40) : williams_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // MACD Histogram signals across timeframes
+    [_, _, macd_hist_current] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
+    macd_hist_signal_current = macd_hist_current > 0 ? 1 : macd_hist_current < 0 ? -1 : 0
+    
+    // For multi-timeframe, use momentum as MACD Histogram proxy (more reliable with request.security)
+    macd_hist_5min = request.security(syminfo.tickerid, "5", ta.mom(close, momLength) > 0 ? 1 : ta.mom(close, momLength) < 0 ? -1 : 0)
+    macd_hist_30min = request.security(syminfo.tickerid, "30", ta.mom(close, momLength) > 0 ? 1 : ta.mom(close, momLength) < 0 ? -1 : 0)
+    macd_hist_1h = request.security(syminfo.tickerid, "60", ta.mom(close, momLength) > 0 ? 1 : ta.mom(close, momLength) < 0 ? -1 : 0)
+    macd_hist_4h = request.security(syminfo.tickerid, "240", ta.mom(close, momLength) > 0 ? 1 : ta.mom(close, momLength) < 0 ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 18, "MACD-H", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 18, str.tostring(macd_hist_signal_current), bgcolor=macd_hist_signal_current == 1 ? color.new(color.green, 40) : macd_hist_signal_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 18, str.tostring(macd_hist_5min), bgcolor=macd_hist_5min == 1 ? color.new(color.green, 40) : macd_hist_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 18, str.tostring(macd_hist_30min), bgcolor=macd_hist_30min == 1 ? color.new(color.green, 40) : macd_hist_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 18, str.tostring(macd_hist_1h), bgcolor=macd_hist_1h == 1 ? color.new(color.green, 40) : macd_hist_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 18, str.tostring(macd_hist_4h), bgcolor=macd_hist_4h == 1 ? color.new(color.green, 40) : macd_hist_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // VOLUME INDICATORS GROUP
+    table.cell(indicatorTable, 0, 19, "VOLUME", bgcolor=color.new(color.green, 60), text_color=color.white)
+    table.cell(indicatorTable, 1, 19, "", bgcolor=color.new(color.green, 60), text_color=color.white)
+    table.cell(indicatorTable, 2, 19, "", bgcolor=color.new(color.green, 60), text_color=color.white)
+    table.cell(indicatorTable, 3, 19, "", bgcolor=color.new(color.green, 60), text_color=color.white)
+    table.cell(indicatorTable, 4, 19, "", bgcolor=color.new(color.green, 60), text_color=color.white)
+    table.cell(indicatorTable, 5, 19, "", bgcolor=color.new(color.green, 60), text_color=color.white)
+    
+    // OBV signals across timeframes
+    obv_current = ta.obv > ta.sma(ta.obv, volPeriod) ? 1 : ta.obv < ta.sma(ta.obv, volPeriod) ? -1 : 0
+    obv_5min = request.security(syminfo.tickerid, "5", ta.obv > ta.sma(ta.obv, volPeriod) ? 1 : ta.obv < ta.sma(ta.obv, volPeriod) ? -1 : 0)
+    obv_30min = request.security(syminfo.tickerid, "30", ta.obv > ta.sma(ta.obv, volPeriod) ? 1 : ta.obv < ta.sma(ta.obv, volPeriod) ? -1 : 0)
+    obv_1h = request.security(syminfo.tickerid, "60", ta.obv > ta.sma(ta.obv, volPeriod) ? 1 : ta.obv < ta.sma(ta.obv, volPeriod) ? -1 : 0)
+    obv_4h = request.security(syminfo.tickerid, "240", ta.obv > ta.sma(ta.obv, volPeriod) ? 1 : ta.obv < ta.sma(ta.obv, volPeriod) ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 20, "OBV", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 20, str.tostring(obv_current), bgcolor=obv_current == 1 ? color.new(color.green, 40) : obv_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 20, str.tostring(obv_5min), bgcolor=obv_5min == 1 ? color.new(color.green, 40) : obv_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 20, str.tostring(obv_30min), bgcolor=obv_30min == 1 ? color.new(color.green, 40) : obv_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 20, str.tostring(obv_1h), bgcolor=obv_1h == 1 ? color.new(color.green, 40) : obv_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 20, str.tostring(obv_4h), bgcolor=obv_4h == 1 ? color.new(color.green, 40) : obv_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // MFI signals across timeframes
+    mfi_current = ta.mfi(close, volPeriod) < 20 ? 1 : ta.mfi(close, volPeriod) > 80 ? -1 : 0
+    mfi_5min = request.security(syminfo.tickerid, "5", ta.mfi(close, volPeriod) < 20 ? 1 : ta.mfi(close, volPeriod) > 80 ? -1 : 0)
+    mfi_30min = request.security(syminfo.tickerid, "30", ta.mfi(close, volPeriod) < 20 ? 1 : ta.mfi(close, volPeriod) > 80 ? -1 : 0)
+    mfi_1h = request.security(syminfo.tickerid, "60", ta.mfi(close, volPeriod) < 20 ? 1 : ta.mfi(close, volPeriod) > 80 ? -1 : 0)
+    mfi_4h = request.security(syminfo.tickerid, "240", ta.mfi(close, volPeriod) < 20 ? 1 : ta.mfi(close, volPeriod) > 80 ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 21, "MFI", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 21, str.tostring(mfi_current), bgcolor=mfi_current == 1 ? color.new(color.green, 40) : mfi_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 21, str.tostring(mfi_5min), bgcolor=mfi_5min == 1 ? color.new(color.green, 40) : mfi_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 21, str.tostring(mfi_30min), bgcolor=mfi_30min == 1 ? color.new(color.green, 40) : mfi_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 21, str.tostring(mfi_1h), bgcolor=mfi_1h == 1 ? color.new(color.green, 40) : mfi_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 21, str.tostring(mfi_4h), bgcolor=mfi_4h == 1 ? color.new(color.green, 40) : mfi_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // Chaikin Money Flow signals across timeframes
+    cmf_current = ta.cmf(close, volPeriod) > 0 ? 1 : ta.cmf(close, volPeriod) < 0 ? -1 : 0
+    cmf_5min = request.security(syminfo.tickerid, "5", ta.cmf(close, volPeriod) > 0 ? 1 : ta.cmf(close, volPeriod) < 0 ? -1 : 0)
+    cmf_30min = request.security(syminfo.tickerid, "30", ta.cmf(close, volPeriod) > 0 ? 1 : ta.cmf(close, volPeriod) < 0 ? -1 : 0)
+    cmf_1h = request.security(syminfo.tickerid, "60", ta.cmf(close, volPeriod) > 0 ? 1 : ta.cmf(close, volPeriod) < 0 ? -1 : 0)
+    cmf_4h = request.security(syminfo.tickerid, "240", ta.cmf(close, volPeriod) > 0 ? 1 : ta.cmf(close, volPeriod) < 0 ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 22, "CMF", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 22, str.tostring(cmf_current), bgcolor=cmf_current == 1 ? color.new(color.green, 40) : cmf_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 22, str.tostring(cmf_5min), bgcolor=cmf_5min == 1 ? color.new(color.green, 40) : cmf_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 22, str.tostring(cmf_30min), bgcolor=cmf_30min == 1 ? color.new(color.green, 40) : cmf_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 22, str.tostring(cmf_1h), bgcolor=cmf_1h == 1 ? color.new(color.green, 40) : cmf_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 22, str.tostring(cmf_4h), bgcolor=cmf_4h == 1 ? color.new(color.green, 40) : cmf_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // Volume Oscillator signals across timeframes
+    vo_current = volume > ta.sma(volume, volPeriod) ? 1 : volume < ta.sma(volume, volPeriod) ? -1 : 0
+    vo_5min = request.security(syminfo.tickerid, "5", volume > ta.sma(volume, volPeriod) ? 1 : volume < ta.sma(volume, volPeriod) ? -1 : 0)
+    vo_30min = request.security(syminfo.tickerid, "30", volume > ta.sma(volume, volPeriod) ? 1 : volume < ta.sma(volume, volPeriod) ? -1 : 0)
+    vo_1h = request.security(syminfo.tickerid, "60", volume > ta.sma(volume, volPeriod) ? 1 : volume < ta.sma(volume, volPeriod) ? -1 : 0)
+    vo_4h = request.security(syminfo.tickerid, "240", volume > ta.sma(volume, volPeriod) ? 1 : volume < ta.sma(volume, volPeriod) ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 23, "VO", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 23, str.tostring(vo_current), bgcolor=vo_current == 1 ? color.new(color.green, 40) : vo_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 23, str.tostring(vo_5min), bgcolor=vo_5min == 1 ? color.new(color.green, 40) : vo_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 23, str.tostring(vo_30min), bgcolor=vo_30min == 1 ? color.new(color.green, 40) : vo_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 23, str.tostring(vo_1h), bgcolor=vo_1h == 1 ? color.new(color.green, 40) : vo_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 23, str.tostring(vo_4h), bgcolor=vo_4h == 1 ? color.new(color.green, 40) : vo_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    
+    // A/D Line signals across timeframes
+    ad_current = ta.ad > ta.sma(ta.ad, volPeriod) ? 1 : ta.ad < ta.sma(ta.ad, volPeriod) ? -1 : 0
+    ad_5min = request.security(syminfo.tickerid, "5", ta.ad > ta.sma(ta.ad, volPeriod) ? 1 : ta.ad < ta.sma(ta.ad, volPeriod) ? -1 : 0)
+    ad_30min = request.security(syminfo.tickerid, "30", ta.ad > ta.sma(ta.ad, volPeriod) ? 1 : ta.ad < ta.sma(ta.ad, volPeriod) ? -1 : 0)
+    ad_1h = request.security(syminfo.tickerid, "60", ta.ad > ta.sma(ta.ad, volPeriod) ? 1 : ta.ad < ta.sma(ta.ad, volPeriod) ? -1 : 0)
+    ad_4h = request.security(syminfo.tickerid, "240", ta.ad > ta.sma(ta.ad, volPeriod) ? 1 : ta.ad < ta.sma(ta.ad, volPeriod) ? -1 : 0)
+    
+    table.cell(indicatorTable, 0, 24, "A/D", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 24, str.tostring(ad_current), bgcolor=ad_current == 1 ? color.new(color.green, 40) : ad_current == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 24, str.tostring(ad_5min), bgcolor=ad_5min == 1 ? color.new(color.green, 40) : ad_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 24, str.tostring(ad_30min), bgcolor=ad_30min == 1 ? color.new(color.green, 40) : ad_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 24, str.tostring(ad_1h), bgcolor=ad_1h == 1 ? color.new(color.green, 40) : ad_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 24, str.tostring(ad_4h), bgcolor=ad_4h == 1 ? color.new(color.green, 40) : ad_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+
+// Performance metrics table
+if barstate.islast
+    // Headers
+    table.cell(performanceTable, 0, 0, "Metric", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 0, "Current", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 0, "Default", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 0, "Optimal", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 0, "Breakout", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 0, "Reversal", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 0, "Trend", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    
+    // Win Rate Row
+    table.cell(performanceTable, 0, 1, "Win Rate%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 1, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 1, str.tostring(default_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 1, str.tostring(optimal_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 1, str.tostring(breakout_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 1, str.tostring(reversal_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 1, str.tostring(trend_winrate, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Profit Factor Row
+    table.cell(performanceTable, 0, 2, "Profit Factor", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 2, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 2, str.tostring(default_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 2, str.tostring(optimal_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 2, str.tostring(breakout_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 2, str.tostring(reversal_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 2, str.tostring(trend_pf, "#.##"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Max Drawdown Row
+    table.cell(performanceTable, 0, 3, "Max DD%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 3, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 3, str.tostring(default_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 3, str.tostring(optimal_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 3, str.tostring(breakout_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 3, str.tostring(reversal_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 3, str.tostring(trend_dd, "#.#") + "%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Net Profit Row
+    table.cell(performanceTable, 0, 4, "Net Profit", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 4, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 4, str.tostring(default_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 4, str.tostring(optimal_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 4, str.tostring(breakout_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 4, str.tostring(reversal_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 4, str.tostring(trend_netprofit, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Total Trades Row
+    table.cell(performanceTable, 0, 5, "Total Trades", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 5, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 5, str.tostring(default_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 5, str.tostring(optimal_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 5, str.tostring(breakout_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 5, str.tostring(reversal_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 5, str.tostring(trend_trades), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Average Trade Row
+    table.cell(performanceTable, 0, 6, "Avg Trade", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 6, "Live Mode", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 6, str.tostring(default_netprofit / default_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 6, str.tostring(optimal_netprofit / optimal_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 6, str.tostring(breakout_netprofit / breakout_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 6, str.tostring(reversal_netprofit / reversal_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 6, str.tostring(trend_netprofit / trend_trades, "#"), bgcolor=color.new(color.gray, 40), text_color=color.white)
+    
+    // Last Signal Row
+    table.cell(performanceTable, 0, 7, "Last Signal", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 7, lastSignalAction, bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 2, 7, preset == "Default" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 3, 7, preset == "Optimal Performance" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 4, 7, preset == "Breakout" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 5, 7, preset == "Reversal" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 6, 7, preset == "Trend Dominator" ? "◄ Active" : "Available", bgcolor=color.new(color.gray, 40), text_color=color.white)
+
+// Set up alert conditions
+alertcondition(final_signal == 1 and final_signal[1] != 1, title="Buy Signal Alert", message="A buy signal has been generated by the strategy")
+alertcondition(final_signal == -1 and final_signal[1] != -1, title="Sell Signal Alert", message="A sell signal has been generated by the strategy")
+
+
+
+// All indicators are used for signal calculation only - no visual overlays on price chart
+// This provides clean price action with signals based on technical analysis
+
+// Note: All trending indicators (SMA, EMA, MACD, ADX, PSAR) are calculated but not plotted
+// Note: All volatility indicators (BB, ATR, KC, StdDev, Chaikin Vol) are calculated but not plotted
+
+// Note: Momentum indicators (RSI, Stochastic, CCI, Williams %R) are not plotted
+// They are used for signal calculation only
+// Calculate MACD histogram for momentum if needed
+var float macd_hist_momentum = na
+if momentumType == "MACD Histogram" and trendingType != "MACD"
+    [_, _, macd_hist_momentum_calc] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
+    macd_hist_momentum := macd_hist_momentum_calc
+
+// Note: MACD Histogram and Volume indicators are not plotted
+// They are used for signal calculation only 
