@@ -1,0 +1,44 @@
+//@version=6
+strategy("Four Dropdown Technical Indicator Strategy", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500)
+
+// ====== PRESET SELECTION ======
+presetGroup = "Strategy Presets"
+preset = input.string("Default", "Strategy Preset", options=["Default", "Optimal Performance", "Breakout", "Reversal", "Trend Dominator"], tooltip="Select a pre-configured set of optimized parameters", group=presetGroup)
+
+// ====== INDICATOR SELECTION DROPDOWNS ======
+
+// === Trending Indicators Settings ===
+trendingGroup = "Trending Indicator Settings"
+trendingType = input.string("MACD → (Leading)", "Trending Indicator", options=["SMA → (Leading)", "EMA → (Leading)", "MACD → (Leading)", "ADX ← (Lagging)", "Parabolic SAR ← (Lagging)"], group=trendingGroup)
+
+// Initialize trend parameters with default values
+var int trendsLength = 14
+var int trendsFast = 12
+var int trendsSlow = 26
+var int trendsSignal = 9
+
+// === Volatility Indicators Settings ===
+volatilityGroup = "Volatility Indicator Settings"
+volatilityType = input.string("Bollinger Bands → (Leading)", "Volatility Indicator", options=["Bollinger Bands → (Leading)", "ATR → (Leading)", "Keltner Channel → (Leading)", "Standard Deviation ← (Lagging)", "Chaikin Volatility ← (Lagging)"], group=volatilityGroup)
+
+// Initialize volatility parameters with default values
+var int volLength = 20
+var float volMultiplier = 2.0
+
+// === Momentum Indicators Settings ===
+momentumGroup = "Momentum Indicator Settings"
+momentumType = input.string("RSI → (Leading)", "Momentum Indicator", options=["RSI → (Leading)", "Stochastic → (Leading)", "CCI → (Leading)", "Williams %R ← (Lagging)", "MACD Histogram ← (Lagging)"], group=momentumGroup)
+
+// Initialize momentum parameters with default values
+var int momLength = 14
+var int momOverBought = 70
+var int momOverSold = 30
+
+// === Volume Indicators Settings ===
+volumeGroup = "Volume Indicator Settings"
+volumeType = input.string("OBV → (Leading)", "Volume Indicator", options=["OBV → (Leading)", "MFI → (Leading)", "Chaikin Money Flow → (Leading)", "Volume Oscillator ← (Lagging)", "A/D Line ← (Lagging)"], group=volumeGroup)
+
+// Initialize volume parameters with default values
+var int volPeriod = 14
+
+// Continue with rest of the code...
