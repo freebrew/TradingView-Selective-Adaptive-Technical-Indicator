@@ -165,6 +165,7 @@ calcADX(length) =>
     adx
 
 adxValue = calcADX(adxLength)  // ✅ Pine Script v6 compatible
+adxFeature = ml.n_adx(high, low, close, adxLength)
 
 // Volume Feature (normalized)
 volumeFeature = normalize(volume, 20)
