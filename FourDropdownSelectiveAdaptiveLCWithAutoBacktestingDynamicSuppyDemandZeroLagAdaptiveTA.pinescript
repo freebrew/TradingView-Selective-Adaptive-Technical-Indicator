@@ -119,7 +119,7 @@ normalize(src, length) =>
 tanhTransform(src) =>
     // Custom tanh implementation: tanh(x) = (e^x - e^(-x)) / (e^x + e^(-x))
     // Simplified approximation: tanh(x) ≈ x / (1 + |x|) for efficiency
-    src / (1 + math.abs(src))
+    src / (1 + math.abs(src))  // ✅ Pine Script v6 compatible
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // FEATURE ENGINEERING
@@ -127,11 +127,11 @@ tanhTransform(src) =>
 
 // RSI Feature
 rsi = ta.rsi(close, rsiLength)
-rsiFeature = ml.n_rsi(close, rsiLength)
+rsiFeature = ml.n_rsi(close, rsiLength, rsiLength)
 
 // CCI Feature  
 cci = ta.cci(hlc3, cciLength)
-cciFeature = ml.n_cci(hlc3, cciLength)
+cciFeature = ml.n_cci(hlc3, cciLength, cciLength)
 
 // WaveTrend Feature
 ap = hlc3
@@ -140,7 +140,7 @@ d = ta.ema(math.abs(ap - esa), wtLength)
 ci = (ap - esa) / (0.015 * d)
 wt1 = ta.ema(ci, wtLength)
 wt2 = ta.sma(wt1, 4)
-wtFeature = ml.n_wt(hlc3, wtLength)
+wtFeature = ml.n_wt(hlc3, wtLength, wtLength)
 
 // ADX Feature
 adxValue = ta.adx(high, low, close, adxLength)
@@ -320,7 +320,7 @@ getFeatureVector(index) =>
     array.push(features, f1)
     
     // Feature 2: Normalized CCI with adaptive smoothing
-    f2 = signalProcessing == "Adaptive T3" ? ml.n_cci(hlc3[index], cciLength) * t3Factor : cciFeature[index]
+    f2 = signalProcessing == "Adaptive T3" ? ml.n_cci(hlc3[index], cciLength, cciLength) * t3Factor : cciFeature[index]
     array.push(features, f2)
     
     // Feature 3: WaveTrend with zero-lag processing
