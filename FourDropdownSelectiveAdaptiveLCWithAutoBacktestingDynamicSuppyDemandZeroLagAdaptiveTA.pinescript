@@ -587,8 +587,8 @@ makePrediction(neighbors) =>
     confidence = totalConfidence / array.size(neighbors)
     
     // Convert to discrete signal with threshold - ULTRA HIGH QUALITY ONLY
-    confidenceThreshold = 0.85  // Increased from 0.6 to 0.85 for ultra high quality signals
-    signal = confidence > confidenceThreshold ? (prediction > 0.5 ? 1 : (prediction < -0.5 ? -1 : 0)) : 0  // Increased thresholds from ±0.2 to ±0.5
+    confidenceThreshold = 0.95  // CRITICAL FIX: Increased from 0.85 to 0.95 for ultra high quality signals only
+    signal = confidence > confidenceThreshold ? (prediction > 0.8 ? 1 : (prediction < -0.8 ? -1 : 0)) : 0  // CRITICAL FIX: Increased thresholds from ±0.5 to ±0.8
     
     [signal, confidence]
 
@@ -659,7 +659,7 @@ kernelEnhancedPrediction() =>
 smoothedPrediction = kernelEnhancedPrediction()
 
 // Convert smoothed prediction to signal - ULTRA HIGH THRESHOLDS
-smoothedSignal = smoothedPrediction > 0.7 ? 1 : smoothedPrediction < -0.7 ? -1 : 0  // Increased from ±0.4 to ±0.7
+smoothedSignal = smoothedPrediction > 0.9 ? 1 : smoothedPrediction < -0.9 ? -1 : 0  // CRITICAL FIX: Increased from ±0.7 to ±0.9
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ADAPTIVE THRESHOLD SYSTEM
@@ -703,10 +703,10 @@ getCombinedSignal() =>
     // Calculate weighted signal
     weightedSignal = (lcSignal * lcWeight) + (signalCurrent * mtfWeight) + (smoothedSignal * kernelWeight) + (adaptiveSignal * adaptiveWeight)
     
-    // Convert to discrete signal - ULTRA HIGH THRESHOLDS FOR QUALITY
-    if weightedSignal > 0.8  // Increased from 0.5 to 0.8
+    // Convert to discrete signal - MAXIMUM THRESHOLDS FOR QUALITY
+    if weightedSignal > 0.95  // CRITICAL FIX: Increased from 0.8 to 0.95 for maximum selectivity
         1   // Strong buy
-    else if weightedSignal < -0.8  // Increased from -0.5 to -0.8
+    else if weightedSignal < -0.95  // CRITICAL FIX: Increased from -0.8 to -0.95 for maximum selectivity
         -1  // Strong sell
     else
         0   // Hold
@@ -718,7 +718,7 @@ combinedSignal = getCombinedSignal()
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Only trade when confidence is high enough - ULTRA HIGH THRESHOLD
-minConfidenceThreshold = 0.9  // Increased from 0.7 to 0.9 for ultra high quality signals only
+minConfidenceThreshold = 0.95  // CRITICAL FIX: Increased from 0.9 to 0.95 for ultra high quality signals only
 highConfidenceSignal = lcConfidence > minConfidenceThreshold ? combinedSignal : 0
 
 // Signal strength indicator
@@ -777,12 +777,17 @@ mtfAlignment = signal5m == signal30m and signal5m == signal1h and signal30m == s
 strongMTFBuy = signal5m > 0 and signal30m > 0 and signal1h > 0 and signal4h > 0
 strongMTFSell = signal5m < 0 and signal30m < 0 and signal1h < 0 and signal4h < 0
 
-lcBuySignal = highConfidenceSignal == 1 and strongMTFBuy and trendFilter and volumeFilter and volatilityFilter and momentumFilter
-lcSellSignal = highConfidenceSignal == -1 and strongMTFSell and trendFilter and volumeFilter and volatilityFilter and momentumFilter
+// CRITICAL FIX: Use enhanced filters and add missing MTF alignment
+allTimeframesAgree = strongMTFBuy or strongMTFSell  // At least one direction must have all timeframes aligned
+rsiFilter = ta.rsi(close, 14) > 20 and ta.rsi(close, 14) < 80  // Avoid RSI extremes
+
+// ULTRA STRICT SIGNAL GENERATION - All enhanced filters must pass
+lcBuySignal = highConfidenceSignal == 1 and strongMTFBuy and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter and rsiFilter and allTimeframesAgree
+lcSellSignal = highConfidenceSignal == -1 and strongMTFSell and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter and rsiFilter and allTimeframesAgree
 
 // ANTI-OVERTRADING FILTER - Limit trade frequency
 var int lastTradeBar = 0
-minBarsBetweenTrades = 50  // Minimum 50 bars between trades (about 4+ hours on 5min chart)
+minBarsBetweenTrades = 200  // CRITICAL FIX: Minimum 200 bars between trades (about 16+ hours on 5min chart) to prevent overtrading
 tradeFrequencyFilter = bar_index - lastTradeBar >= minBarsBetweenTrades
 
 // Update last trade bar when we have a signal
@@ -802,18 +807,21 @@ sellSignal := lcSellSignal and tradeFrequencyFilter and marketConditionFilter an
 // ENHANCED TABLE UPDATES WITH LC METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// OPTIMIZED: Only update tables every 5 bars to reduce computational load
-if barstate.islast and showTables and bar_index % 5 == 0
+// RESTORED: Update tables normally for proper display
+if barstate.islast and showTables
     // Add LC-specific rows to performance table (reduced frequency)
     table.cell(perfTable, 0, 8, "LC Confidence", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     table.cell(perfTable, 1, 8, str.tostring(math.round(lcConfidence * 100, 1)) + "%", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     
-    // Essential metrics only for performance
+    // Restore all essential metrics for proper display
     table.cell(perfTable, 0, 9, "Signal Strength", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     table.cell(perfTable, 1, 9, signalStrength, bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     
-    table.cell(perfTable, 0, 10, "Combined Signal", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    table.cell(perfTable, 1, 10, signalToText(combinedSignal), bgcolor=signalColor(combinedSignal), text_color=color.white, text_size=size.small)
+    table.cell(perfTable, 0, 10, "LC Prediction", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
+    table.cell(perfTable, 1, 10, str.tostring(math.round(lcPrediction, 3)), bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
+    
+    table.cell(perfTable, 0, 11, "Combined Signal", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
+    table.cell(perfTable, 1, 11, signalToText(combinedSignal), bgcolor=signalColor(combinedSignal), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // PHASE 2 COMPLETE - ENHANCED LC & ML CORE ESTABLISHED
