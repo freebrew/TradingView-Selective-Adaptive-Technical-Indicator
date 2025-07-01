@@ -55,12 +55,12 @@ mlUpdateFrequency = performanceMode ? 3 : 1  // Update every 3 bars in performan
 //    • Optimized KNN algorithm and array operations
 //    • Added conditional calculations and performance mode
 //
-// 📈 STRATEGY PERFORMANCE IMPROVEMENTS (Fixed Poor Returns):
-//    • Risk Management: Stop Loss 2.0% → 3.5%, Take Profit 4.0% → 8.0% (2.3:1 ratio)
-//    • Signal Quality: Confidence threshold 0.3 → 0.6, Prediction threshold ±0.1 → ±0.2
-//    • Trade Filtering: Added ADX trend filter (>25) and volume confirmation (>1.2x avg)
-//    • ML Parameters: Neighbors 5 → 8, Max bars back 300 → 500 for better predictions
-//    • Position Sizing: Risk per trade 1.0% → 0.5% for better capital preservation
+// 📈 STRATEGY PERFORMANCE IMPROVEMENTS (Targeting Positive Returns):
+//    • Risk Management: Stop Loss 2.5%, Take Profit 12% (4.8:1 ratio), Risk 0.25% per trade
+//    • Ultra High Quality: Confidence 0.85+, Prediction ±0.5, Combined signal ±0.8, Min confidence 0.9
+//    • Strict Filtering: ADX >35, Volume >2x avg, Volatility >1.3x, Momentum >1%, All MTF align
+//    • Anti-Overtrading: Minimum 50 bars between trades, Market condition filter (RSI 20-80)
+//    • ML Parameters: Neighbors 8, Max bars 500, Enhanced feature weighting
 //
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 //
@@ -120,11 +120,11 @@ tableSize = input.string("small", "Table Size", options=["tiny", "small", "norma
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // RISK MANAGEMENT SETTINGS - OPTIMIZED FOR BETTER PERFORMANCE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-stopLossPercent = input.float(3.5, "Stop Loss %", minval=0.1, maxval=10.0, step=0.1, group="Risk Management")  // Increased from 2.0 to 3.5
-takeProfitPercent = input.float(8.0, "Take Profit %", minval=0.1, maxval=20.0, step=0.1, group="Risk Management")  // Increased from 4.0 to 8.0 (better 2.3:1 ratio)
-trailingStopPercent = input.float(2.0, "Trailing Stop %", minval=0.1, maxval=5.0, step=0.1, group="Risk Management")  // Increased from 1.0 to 2.0
-maxDailyLoss = input.float(3.0, "Max Daily Loss %", minval=1.0, maxval=20.0, step=0.5, group="Risk Management")  // Reduced from 5.0 to 3.0
-riskPerTrade = input.float(0.5, "Risk Per Trade %", minval=0.1, maxval=5.0, step=0.1, group="Risk Management")  // Reduced from 1.0 to 0.5
+stopLossPercent = input.float(2.5, "Stop Loss %", minval=0.1, maxval=10.0, step=0.1, group="Risk Management")  // Optimized to 2.5% for better entries
+takeProfitPercent = input.float(12.0, "Take Profit %", minval=0.1, maxval=20.0, step=0.1, group="Risk Management")  // Increased to 12% for 4.8:1 ratio
+trailingStopPercent = input.float(1.5, "Trailing Stop %", minval=0.1, maxval=5.0, step=0.1, group="Risk Management")  // Optimized to 1.5%
+maxDailyLoss = input.float(2.0, "Max Daily Loss %", minval=1.0, maxval=20.0, step=0.5, group="Risk Management")  // Reduced to 2.0% for strict control
+riskPerTrade = input.float(0.25, "Risk Per Trade %", minval=0.1, maxval=5.0, step=0.1, group="Risk Management")  // Reduced to 0.25% for ultra conservative sizing
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // DISPLAY SETTINGS
@@ -586,9 +586,9 @@ makePrediction(neighbors) =>
     prediction = totalWeight > 0 ? weightedSum / totalWeight : 0
     confidence = totalConfidence / array.size(neighbors)
     
-    // Convert to discrete signal with threshold - OPTIMIZED FOR QUALITY
-    confidenceThreshold = 0.6  // Increased from 0.3 to 0.6 for higher quality signals
-    signal = confidence > confidenceThreshold ? (prediction > 0.2 ? 1 : (prediction < -0.2 ? -1 : 0)) : 0  // Increased thresholds from ±0.1 to ±0.2
+    // Convert to discrete signal with threshold - ULTRA HIGH QUALITY ONLY
+    confidenceThreshold = 0.85  // Increased from 0.6 to 0.85 for ultra high quality signals
+    signal = confidence > confidenceThreshold ? (prediction > 0.5 ? 1 : (prediction < -0.5 ? -1 : 0)) : 0  // Increased thresholds from ±0.2 to ±0.5
     
     [signal, confidence]
 
@@ -658,8 +658,8 @@ kernelEnhancedPrediction() =>
 
 smoothedPrediction = kernelEnhancedPrediction()
 
-// Convert smoothed prediction to signal - HIGHER THRESHOLDS FOR QUALITY
-smoothedSignal = smoothedPrediction > 0.4 ? 1 : smoothedPrediction < -0.4 ? -1 : 0  // Increased from ±0.2 to ±0.4
+// Convert smoothed prediction to signal - ULTRA HIGH THRESHOLDS
+smoothedSignal = smoothedPrediction > 0.7 ? 1 : smoothedPrediction < -0.7 ? -1 : 0  // Increased from ±0.4 to ±0.7
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ADAPTIVE THRESHOLD SYSTEM
@@ -703,10 +703,10 @@ getCombinedSignal() =>
     // Calculate weighted signal
     weightedSignal = (lcSignal * lcWeight) + (signalCurrent * mtfWeight) + (smoothedSignal * kernelWeight) + (adaptiveSignal * adaptiveWeight)
     
-    // Convert to discrete signal - HIGHER THRESHOLDS FOR QUALITY
-    if weightedSignal > 0.5  // Increased from 0.3 to 0.5
+    // Convert to discrete signal - ULTRA HIGH THRESHOLDS FOR QUALITY
+    if weightedSignal > 0.8  // Increased from 0.5 to 0.8
         1   // Strong buy
-    else if weightedSignal < -0.5  // Increased from -0.3 to -0.5
+    else if weightedSignal < -0.8  // Increased from -0.5 to -0.8
         -1  // Strong sell
     else
         0   // Hold
@@ -717,8 +717,8 @@ combinedSignal = getCombinedSignal()
 // CONFIDENCE-BASED SIGNAL FILTERING
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Only trade when confidence is high enough - INCREASED FOR QUALITY
-minConfidenceThreshold = 0.7  // Increased from 0.4 to 0.7 for much higher quality signals
+// Only trade when confidence is high enough - ULTRA HIGH THRESHOLD
+minConfidenceThreshold = 0.9  // Increased from 0.7 to 0.9 for ultra high quality signals only
 highConfidenceSignal = lcConfidence > minConfidenceThreshold ? combinedSignal : 0
 
 // Signal strength indicator
@@ -757,17 +757,38 @@ shouldExit() =>
 // ENHANCED SIGNAL GENERATION (Replacing Phase 1 basic signals)
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Enhanced buy/sell signals using LC predictions - WITH ADDITIONAL FILTERS
-// Add ADX trend filter and volume confirmation
-trendFilter = adxValue > 25  // Only trade in trending markets
-volumeFilter = volume > ta.sma(volume, 20) * 1.2  // Volume confirmation
+// Enhanced buy/sell signals using LC predictions - ULTRA STRICT FILTERING
+// Multiple confirmation filters for highest quality trades only
+trendFilter = adxValue > 35  // Only trade in strong trending markets (increased from 25)
+volumeFilter = volume > ta.sma(volume, 20) * 2.0  // Strong volume confirmation (increased from 1.2x to 2.0x)
+volatilityFilter = ta.atr(14) > ta.sma(ta.atr(14), 50) * 1.3  // Higher volatility for better moves
+momentumFilter = math.abs(close - close[5]) / close > 0.01  // Minimum 1% price movement over 5 bars
 
-lcBuySignal = highConfidenceSignal == 1 and signal5m >= 0 and signal30m >= 0 and trendFilter and volumeFilter
-lcSellSignal = highConfidenceSignal == -1 and signal5m <= 0 and signal30m <= 0 and trendFilter and volumeFilter
+// All timeframes must strongly agree
+mtfAlignment = signal5m == signal30m and signal5m == signal1h and signal30m == signal1h
+strongMTFBuy = signal5m > 0 and signal30m > 0 and signal1h > 0 and signal4h > 0
+strongMTFSell = signal5m < 0 and signal30m < 0 and signal1h < 0 and signal4h < 0
 
-// Override basic signals with LC-enhanced signals
-buySignal := lcBuySignal
-sellSignal := lcSellSignal
+lcBuySignal = highConfidenceSignal == 1 and strongMTFBuy and trendFilter and volumeFilter and volatilityFilter and momentumFilter
+lcSellSignal = highConfidenceSignal == -1 and strongMTFSell and trendFilter and volumeFilter and volatilityFilter and momentumFilter
+
+// ANTI-OVERTRADING FILTER - Limit trade frequency
+var int lastTradeBar = 0
+minBarsBetweenTrades = 50  // Minimum 50 bars between trades (about 4+ hours on 5min chart)
+tradeFrequencyFilter = bar_index - lastTradeBar >= minBarsBetweenTrades
+
+// Update last trade bar when we have a signal
+if (lcBuySignal or lcSellSignal) and tradeFrequencyFilter
+    lastTradeBar := bar_index
+
+// MARKET CONDITION FILTER - Avoid unfavorable market conditions
+rsiOverbought = ta.rsi(close, 14) > 80
+rsiOversold = ta.rsi(close, 14) < 20
+marketConditionFilter = not (rsiOverbought or rsiOversold)  // Avoid extreme RSI conditions
+
+// FINAL SIGNAL GENERATION with all filters
+buySignal := lcBuySignal and tradeFrequencyFilter and marketConditionFilter
+sellSignal := lcSellSignal and tradeFrequencyFilter and marketConditionFilter
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ENHANCED TABLE UPDATES WITH LC METRICS
