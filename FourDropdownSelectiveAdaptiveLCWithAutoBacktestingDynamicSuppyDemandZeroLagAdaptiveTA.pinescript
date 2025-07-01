@@ -142,8 +142,29 @@ wt1 = ta.ema(ci, wtLength)
 wt2 = ta.sma(wt1, 4)
 wtFeature = ml.n_wt(hlc3, wtLength, wtLength)
 
-// ADX Feature
-adxValue = ta.adx(high, low, close, adxLength)
+// ADX Feature (Custom implementation for Pine Script v6)
+calcADX(length) =>
+    // Calculate True Range
+    tr = math.max(high - low, math.max(math.abs(high - close[1]), math.abs(low - close[1])))
+    
+    // Calculate Directional Movement
+    upMove = high - high[1]
+    downMove = low[1] - low
+    
+    plusDM = upMove > downMove and upMove > 0 ? upMove : 0
+    minusDM = downMove > upMove and downMove > 0 ? downMove : 0
+    
+    // Smooth the values
+    trueRange = ta.rma(tr, length)
+    plusDI = 100 * ta.rma(plusDM, length) / trueRange
+    minusDI = 100 * ta.rma(minusDM, length) / trueRange
+    
+    // Calculate ADX
+    dx = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+    adx = ta.rma(dx, length)
+    adx
+
+adxValue = calcADX(adxLength)
 adxFeature = ml.n_adx(high, low, close, adxLength)
 
 // Volume Feature (normalized)
