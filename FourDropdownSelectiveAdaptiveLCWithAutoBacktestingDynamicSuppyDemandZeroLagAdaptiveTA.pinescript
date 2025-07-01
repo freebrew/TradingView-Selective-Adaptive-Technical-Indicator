@@ -164,8 +164,7 @@ calcADX(length) =>
     adx = ta.rma(dx, length)
     adx
 
-adxValue = calcADX(adxLength)
-adxFeature = ml.n_adx(high, low, close, adxLength)
+adxValue = calcADX(adxLength)  // ✅ Pine Script v6 compatible
 
 // Volume Feature (normalized)
 volumeFeature = normalize(volume, 20)
@@ -180,7 +179,7 @@ getKernel(src, lookback) =>
         "Rational Quadratic" => kernels.rationalQuadratic(src, lookback, 1.0, 1.0)
         "Gaussian" => kernels.gaussian(src, lookback, 1.0)
         "Periodic" => kernels.periodic(src, lookback, 1.0, 1.0)
-        "Locally Periodic" => kernels.locallyPeriodic(src, lookback, 1.0, 1.0, 1.0)
+        "Locally Periodic" => kernels.locallyPeriodic(src, lookback, 1.0, 1.0)
         => kernels.rationalQuadratic(src, lookback, 1.0, 1.0)
 
 // Apply kernel smoothing to price data
