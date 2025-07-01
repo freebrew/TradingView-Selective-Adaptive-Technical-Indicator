@@ -1,308 +1,307 @@
-# TradingView - Four Dropdown Selective Adaptive LC Strategy
+# Four Dropdown Technical Indicator Strategy
 
-## 🚀 Advanced Institutional-Grade Trading System
+A comprehensive Pine Script v6 trading strategy that combines four different categories of technical indicators with multi-timeframe analysis and configurable signal combination strategies.
 
-A comprehensive Pine Script v6 strategy that combines **Machine Learning**, **Dynamic Market Structure Analysis**, **Zero-Lag Technical Indicators**, and **Automated Optimization** into a single powerful trading system. This represents the evolution of selective adaptive technical analysis with cutting-edge ML integration.
+## 🎯 Strategy Overview
 
-## 🎯 System Overview
+This strategy allows traders to select one indicator from each of four major categories:
+- **Trending Indicators** - Identify market direction
+- **Volatility Indicators** - Measure market volatility and potential breakouts
+- **Momentum Indicators** - Detect overbought/oversold conditions
+- **Volume Indicators** - Confirm price movements with volume analysis
 
-This advanced trading strategy integrates **7 comprehensive phases** of development, creating an institutional-grade system with:
-- **2,835 lines** of optimized Pine Script v6 code
-- **Advanced Lorentzian Classification** with ML-enhanced predictions
-- **Dynamic Supply & Demand Zone Detection** with real-time strength analysis
-- **Zero-Lag Adaptive Technical Analysis** with volatility-based adjustments
-- **Comprehensive Auto-Backtesting Engine** with genetic algorithm optimization
-- **Professional UI** with 4 enhanced information tables
-- **Advanced Risk Management** with drawdown protection and dynamic position sizing
+### Key Features
 
-## 📚 Dependencies & Libraries
+- **Multi-Timeframe Analysis**: Displays signals across 5min, 30min, 1h, and 4h timeframes
+- **Flexible Signal Combination**: Three strategies for combining indicator signals
+- **Pre-configured Presets**: Optimized parameter sets for different trading styles
+- **Advanced Risk Management**: Stop-loss, take-profit, and trailing stop options
+- **Real-time Performance Tracking**: Live performance metrics and trade monitoring
+- **Alert System**: Configurable alerts for buy/sell signals
 
-**MINIMAL LIBRARY REQUIREMENTS:**
+## 📊 Available Indicators
+
+### Trending Indicators
+- **SMA (Simple Moving Average)** → Leading
+- **EMA (Exponential Moving Average)** → Leading  
+- **MACD (Moving Average Convergence Divergence)** → Leading
+- **ADX (Average Directional Index)** ← Lagging
+- **Parabolic SAR** ← Lagging
+
+### Volatility Indicators
+- **Bollinger Bands** → Leading
+- **ATR (Average True Range)** → Leading
+- **Keltner Channel** → Leading
+- **Standard Deviation** ← Lagging
+- **Chaikin Volatility** ← Lagging
+
+### Momentum Indicators
+- **RSI (Relative Strength Index)** → Leading
+- **Stochastic Oscillator** → Leading
+- **CCI (Commodity Channel Index)** → Leading
+- **Williams %R** ← Lagging
+- **MACD Histogram** ← Lagging
+
+### Volume Indicators
+- **OBV (On-Balance Volume)** → Leading
+- **MFI (Money Flow Index)** → Leading
+- **Chaikin Money Flow** → Leading
+- **Volume Oscillator** ← Lagging
+- **A/D Line (Accumulation/Distribution)** ← Lagging
+
+## 🎛️ Strategy Presets
+
+### Default
+Standard settings suitable for general market conditions.
+
+### Optimal Performance
+Balanced settings designed for consistent performance across various market conditions.
+- Fast MACD: 12, Slow: 26, Signal: 9
+- Bollinger Bands: 20 periods, 2.0 deviation
+- RSI: 14 periods, 70/30 levels
+- Volume period: 14
+
+### Breakout
+Optimized for catching market breakouts with increased sensitivity.
+- Fast MACD: 8, Slow: 21, Signal: 7
+- Bollinger Bands: 15 periods, 2.5 deviation
+- RSI: 10 periods, 65/35 levels
+- Volume period: 10
+
+### Reversal
+Tuned for identifying trend reversals with extended parameters.
+- Fast MACD: 6, Slow: 19, Signal: 5
+- Bollinger Bands: 25 periods, 1.8 deviation
+- RSI: 16 periods, 75/25 levels
+- Volume period: 16
+
+### Trend Dominator
+Maximized for strong trend following with longer-term parameters.
+- Fast MACD: 15, Slow: 30, Signal: 10
+- Bollinger Bands: 30 periods, 2.2 deviation
+- RSI: 12 periods, 68/32 levels
+- Volume period: 12
+
+## 🔄 Signal Combination Strategies
+
+### All Agree
+Requires all four selected indicators to agree (all bullish or all bearish) before generating a signal. Most conservative approach with highest accuracy but fewer trades.
+
+### Majority Vote
+Generates signals when at least 3 out of 4 indicators agree. Balanced approach between signal frequency and reliability.
+
+### Custom Threshold
+Allows setting a custom number (1-4) of indicators required to agree. Provides maximum flexibility for different risk tolerances.
+
+## 🛡️ Risk Management Features
+
+### Stop Loss & Take Profit
+- Configurable percentage-based stop loss (default: 2%)
+- Configurable percentage-based take profit (default: 5%)
+- Automatic position sizing based on account equity
+
+### Trailing Stop
+- Optional trailing stop-loss functionality
+- Follows price movements to lock in profits
+- Configurable trail distance and offset
+
+### Trade Limiting
+- Maximum trades per day setting (default: 1)
+- Prevents over-trading and excessive risk exposure
+- Automatic daily reset of trade counter
+
+### Position Management
+- Automatic position reversal on signal change
+- Maximum drawdown protection (15% of equity)
+- Real-time position monitoring and alerts
+
+## 📈 Multi-Timeframe Analysis
+
+The strategy analyzes signals across multiple timeframes:
+- **Current Timeframe**: Primary trading signals
+- **5 Minutes**: Short-term momentum confirmation
+- **30 Minutes**: Medium-term trend validation
+- **1 Hour**: Hourly trend alignment
+- **4 Hours**: Long-term directional bias
+
+### Timeframe Display Table
+Real-time table showing:
+- Individual indicator signals for each timeframe
+- Combined signal strength per timeframe
+- Color-coded visualization (Green: Bullish, Red: Bearish, Gray: Neutral)
+
+## 📊 Performance Monitoring
+
+### Live Performance Metrics
+- **Net Profit**: Total profit/loss and percentage return
+- **Win Rate**: Percentage of winning trades
+- **Maximum Drawdown**: Largest peak-to-trough decline
+- **Profit Factor**: Ratio of gross profit to gross loss
+- **Total Trades**: Number of completed trades
+- **Average Trade**: Average profit/loss per trade
+
+### Trade Tracking
+- **Last Signal**: Most recent trading action
+- **Signal Time**: Timestamp of last signal
+- **Active Preset**: Currently selected preset configuration
+- **Preset Description**: Brief description of active preset
+
+## 🔧 Technical Implementation
+
+### Pine Script v6 Features
+- Modern Pine Script syntax and best practices
+- Efficient memory usage with `var` declarations
+- Method-based functions for multi-timeframe analysis
+- Request.security() for cross-timeframe data retrieval
+
+### Code Architecture
+
 ```pinescript
-//@version=6
-import jdehorty/MLExtensions/2 as ml      // Machine Learning Extensions
-import jdehorty/KernelFunctions/2 as kernels  // Kernel Functions for ML
+// Core Components:
+1. Input Configuration System
+2. Preset Parameter Management  
+3. Indicator Calculation Engine
+4. Signal Generation Logic
+5. Multi-Timeframe Analysis
+6. Risk Management System
+7. Visualization Framework
+8. Performance Tracking
 ```
 
-All other functionality is implemented natively for optimal performance and Pine Script v6 compliance.
+### Key Functions
 
-## 🏗️ Core Architecture - Four Dropdown System
+#### Multi-Timeframe Methods
+- `trendingSignalMTF(tf)` - Calculate trending signals for any timeframe
+- `volatilitySignalMTF(tf)` - Calculate volatility signals for any timeframe  
+- `momentumSignalMTF(tf)` - Calculate momentum signals for any timeframe
+- `volumeSignalMTF(tf)` - Calculate volume signals for any timeframe
+- `combinedSignalMTF()` - Combine individual signals using selected strategy
 
-### Dropdown 1: ML Kernel Selection
-- **Rational Quadratic**: Balanced kernel for general market conditions
-- **Gaussian**: Smooth kernel for trending markets
-- **Periodic**: Cyclical pattern detection for ranging markets
-- **Locally Periodic**: Hybrid approach for mixed market conditions
-
-### Dropdown 2: Market Structure Mode
-- **Supply/Demand**: Dynamic zone-based market structure analysis
-- **Support/Resistance**: Traditional level-based analysis
-- **Breakout/Reversal**: Momentum-based structure detection
-
-### Dropdown 3: Signal Processing
-- **Zero-Lag**: Phase-corrected indicators with minimal delay
-- **Adaptive T3**: RSI-adaptive smoothing for dynamic markets
-- **Standard**: Traditional indicator calculations
-- **Hybrid**: Combined approach for maximum accuracy
-
-### Dropdown 4: Optimization Mode
-- **Manual**: User-controlled parameter settings
-- **Auto-Backtest**: Genetic algorithm optimization
-- **Real-time Adaptive**: Dynamic parameter adjustment
-- **Performance Analysis**: Comprehensive metric evaluation
-
-## 🧠 Machine Learning Core Features
-
-### Advanced Lorentzian Classification
-- **5-Feature Vector System**: RSI, CCI, WaveTrend, ADX, Volume-Price divergence
-- **Dynamic Neighbor Count**: Volatility-based K-NN optimization (3-20 neighbors)
-- **Confidence Scoring**: Prediction reliability from 0-100%
-- **Signal Strength Weighting**: Distance-based prediction confidence
-- **Adaptive Thresholds**: Market condition-based signal filtering
-
-### ML-Enhanced Predictions
-- **Kernel-Smoothed Signals**: Reduced noise with maintained responsiveness
-- **Multi-Factor Signal Combination**: Weighted consensus from multiple sources
-- **Real-time Accuracy Tracking**: Live performance monitoring of ML predictions
-- **Feature Importance Weighting**: Dynamic adjustment based on market conditions
-
-## 📊 Dynamic Supply & Demand Zones
-
-### Intelligent Zone Detection
-- **Volume-Confirmed Pivots**: High-volume pivot points for zone creation
-- **Dynamic Strength Calculation**: Multi-factor zone reliability scoring
-- **Real-time Zone Management**: Automatic zone updates and invalidation
-- **Proximity-Based Signals**: Enhanced entries near strong zones
-
-### Zone Analytics
-- **Active Zone Tracking**: Real-time count of supply/demand zones
-- **Strength Percentage**: Individual zone reliability metrics
-- **Distance Calculations**: Price proximity to key zones
-- **Zone-Enhanced Entries**: Signal modification based on zone interaction
-
-## ⚡ Zero-Lag Adaptive Technical Analysis
-
-### Advanced Indicator Framework
-- **Zero-Lag EMA/MACD**: Error-corrected calculations with minimal delay
-- **Adaptive RSI**: Volatility-adjusted periods and smoothing
-- **Dynamic Stochastic**: Market condition-based parameter adjustment
-- **Adaptive CCI**: Trend strength-weighted calculations
-
-### Market Condition Adaptation
-- **Trend Strength Detection**: Real-time market regime identification
-- **Volatility-Based Adjustments**: Dynamic parameter optimization
-- **Signal Weighting System**: Adaptive importance based on market conditions
-- **Multi-Timeframe Consensus**: 5min, 30min, 1h, 4h signal alignment
-
-## 🔄 Auto-Backtesting & Optimization Engine
-
-### Comprehensive Performance Tracking
-- **20+ Performance Metrics**: Sharpe ratio, Sortino ratio, Calmar ratio, etc.
-- **Real-time Calculation**: Live performance monitoring
-- **Trade Analysis**: Individual trade tracking and statistics
-- **Benchmark Comparison**: Performance vs Buy & Hold strategy
-
-### Advanced Optimization Features
-- **Multi-Parameter Optimization**: Genetic algorithm-based parameter tuning
-- **Dynamic Position Sizing**: Kelly Criterion and risk-based sizing
-- **Performance Ranking**: Score-based optimization result ranking
-- **Risk-Adjusted Metrics**: Comprehensive risk-return analysis
-
-## 💼 Advanced Risk Management
-
-### Institutional-Grade Risk Controls
-- **Dynamic Drawdown Protection**: Real-time equity protection (15% max)
-- **Consecutive Loss Limits**: Automatic trading halt after losses
-- **Daily Loss Limits**: Maximum daily risk exposure control
-- **Volatility-Based Position Sizing**: Risk adjustment for market conditions
-
-### Smart Exit Management
-- **Trailing Stop System**: ATR-based dynamic stops
-- **Breakeven Protection**: Automatic profit protection
-- **Time-Based Exits**: Maximum holding period limits
-- **Zone-Based Stops**: Supply/demand level stop placement
-
-## 📱 Professional User Interface
-
-### Four Enhanced Information Tables
-
-#### 1. Multi-Timeframe Signals Table (Top Left)
-- **Signal Status**: Buy/Hold/Sell across all timeframes
-- **Signal Strength**: Percentage confidence for each timeframe
-- **Combined Signal**: Weighted consensus with confidence level
-- **Clean White Text**: Professional legibility across all displays
-
-#### 2. Performance Metrics Table (Top Right)
-- **Live Performance Data**: Real-time strategy statistics
-- **ML Confidence**: Current prediction reliability
-- **Signal Strength**: Overall system confidence
-- **Risk Metrics**: Current drawdown and risk exposure
-
-#### 3. Supply & Demand Analysis Table (Bottom Left)
-- **Active Zones**: Count of current supply/demand zones
-- **Zone Strength**: Average strength of active zones
-- **Key Levels**: Strongest supply/demand prices
-- **Distance Metrics**: Proximity to important zones
-
-#### 4. Zero-Lag Indicators Table (Bottom Right)
-- **Trend Strength**: Current market trend intensity
-- **Adaptive Indicators**: Zero-lag RSI, MACD, Stochastic values
-- **Signal Accuracy**: Historical prediction accuracy
-- **Market Volatility**: Current volatility assessment
-
-#### 5. Risk Management Table (Middle Right)
-- **Current Drawdown**: Real-time equity protection status
-- **Position Size**: Dynamic risk-adjusted position sizing
-- **Risk Override Status**: Trading permission status
-- **Trailing Stops**: Active stop loss levels
-
-### Visual Signal System
-- **Enhanced Signal Shapes**: Multiple signal types with strength-based sizing
-- **Market Regime Background**: Subtle coloring based on market conditions
-- **Professional Color Scheme**: Institutional-grade visual design
-- **Minimal Chart Clutter**: Focus on essential information only
-
-## 🎛️ Configuration & Usage
-
-### Quick Start
-1. **Apply to Chart**: Add script to any TradingView chart
-2. **Select Timeframe**: Recommended 1H or 4H for best results
-3. **Choose Configuration**: Select from four dropdown menus
-4. **Monitor Tables**: Watch real-time signals and performance
-5. **Follow Signals**: Enter positions based on enhanced signals
-
-### Recommended Settings
+#### Signal Processing
 ```pinescript
-// Optimal Performance Configuration
-kernelType = "Rational Quadratic"    // Balanced ML kernel
-structureMode = "Supply/Demand"      // Dynamic zone analysis
-signalProcessing = "Zero-Lag"        // Minimal delay indicators
-optimizationMode = "Auto-Backtest"   // Automated optimization
+// Signal values: 1 (Bullish), -1 (Bearish), 0 (Neutral)
+final_signal = signalStrategy == "All Agree" ? 
+    (positive_signals >= 4 ? 1 : negative_signals >= 4 ? -1 : 0) :
+    signalStrategy == "Majority Vote" ? 
+    (positive_signals > negative_signals and positive_signals >= 3 ? 1 : 
+     negative_signals > positive_signals and negative_signals >= 3 ? -1 : 0) :
+    (positive_signals >= customThreshold ? 1 : 
+     negative_signals >= customThreshold ? -1 : 0)
 ```
 
-### Risk Parameters
-```pinescript
-stopLossPercent = 2.0      // Dynamic stop loss
-takeProfitPercent = 4.0    // Zone-based targets
-riskPerTrade = 1.0         // Position size percentage
-maxDailyLoss = 5.0         // Daily risk limit
-```
+### Performance Optimizations
+- Conditional plotting to reduce computational load
+- Efficient table updates only on last bar
+- Minimal security calls with batched requests
+- Smart variable initialization with `var` keyword
 
-## 📈 Performance Features
+## 🚀 Usage Instructions
 
-### Real-Time Metrics
-- **Net Profit**: Total return with percentage
-- **Sharpe Ratio**: Risk-adjusted performance
-- **Maximum Drawdown**: Worst equity decline
-- **Win Rate**: Percentage of profitable trades
-- **Profit Factor**: Gross profit/loss ratio
-- **Signal Accuracy**: ML prediction success rate
-- **Optimization Score**: Overall system performance
+### For Traders
 
-### Advanced Analytics
-- **Multi-Timeframe Analysis**: Signal confluence across timeframes
-- **Zone Interaction**: Supply/demand level analysis
-- **Volatility Adaptation**: Market condition responsiveness
-- **Risk-Adjusted Returns**: Comprehensive performance evaluation
+1. **Select Your Preset**: Choose from 5 pre-configured presets based on your trading style
+2. **Choose Indicators**: Select one indicator from each category (or use preset defaults)
+3. **Configure Signal Strategy**: Choose how indicators should be combined
+4. **Set Risk Parameters**: Configure stop-loss, take-profit, and position sizing
+5. **Enable Alerts**: Set up notifications for buy/sell signals
+6. **Monitor Performance**: Track results using the built-in performance table
 
-## 🔧 Technical Specifications
+### For Developers
 
-### Pine Script v6 Compliance
-- **Modern Syntax**: Latest Pine Script v6 standards
-- **Optimized Performance**: Efficient memory and execution
-- **Professional Code Structure**: Modular, maintainable architecture
-- **Comprehensive Error Handling**: Robust system reliability
+1. **Code Structure**: The script is organized into clear sections with comprehensive comments
+2. **Customization**: Easy to add new indicators or modify existing ones
+3. **Extension**: Multi-timeframe framework supports additional timeframes
+4. **Integration**: Alert system compatible with external trading bots
+5. **Testing**: Built-in backtesting with detailed performance metrics
 
-### System Requirements
-- **TradingView Pro/Pro+**: For optimal table display
-- **Stable Internet**: Real-time data requirements
-- **Modern Browser**: Full feature compatibility
+## 📋 Configuration Options
 
-## 📊 Codebase Structure
+### Input Groups
+- **Strategy Presets**: Pre-configured parameter sets
+- **Trending Indicator Settings**: Trend-following indicator selection
+- **Volatility Indicator Settings**: Volatility measurement tools
+- **Momentum Indicator Settings**: Momentum oscillator configuration
+- **Volume Indicator Settings**: Volume analysis tools
+- **Signal and Risk Management**: Signal combination and risk controls
+- **Order Limiting**: Trade frequency and position management
 
-```
-TradingView-Selective-Adaptive-TA/
-├── FourDropdownSelectiveAdaptiveLCWithAutoBacktestingDynamicSuppyDemandZeroLagAdaptiveTA.pinescript (2,835 lines)
-├── FourDropdownSelectiveAdaptiveLCWithAutoBacktestingDynamicSuppyDemandZeroLagAdaptiveTA.md
-├── jdehorty/
-│   ├── MLExtensions/2 (ML library dependency)
-│   └── KernelFunctions/2 (Kernel library dependency)
-├── peerCodeIdeas/
-│   ├── Lorentzian Classification.pinescript
-│   ├── AutoBacktestAndOptimizeEngine.pinescript
-│   ├── DynamicSupplyAndDemandZones.pinescript
-│   ├── ZeroLagTrendSignalsMTF.pinescript
-│   └── RSI-Adaptive T3.pinescript
-├── PINE_SCRIPT_V6_FIXES_SUMMARY.md
-├── PINE_SCRIPT_STYLE_GUIDE.md
-├── main.pinescript.legacy (Previous version)
-└── README.md
-```
+### Alert Conditions
+- **Buy Signal Alert**: Triggered when bullish signal is generated
+- **Sell Signal Alert**: Triggered when bearish signal is generated
+- **Custom Messages**: Configurable alert messages for external systems
 
-## 🚀 Key Innovations
+## 🎨 Visual Features
 
-### 1. **ML-Enhanced Signal Generation**
-- Lorentzian Classification with 5-feature vectors
-- Dynamic neighbor optimization
-- Confidence-based signal filtering
+### Chart Overlays
+- Buy/Sell signal markers (triangles)
+- Selected indicator plots with appropriate styling
+- Support/resistance levels for relevant indicators
+- Color-coded signal strength visualization
 
-### 2. **Dynamic Market Structure**
-- Real-time supply/demand zone detection
-- Volume-confirmed zone creation
-- Zone-enhanced entry/exit signals
+### Information Tables
+- **Multi-Timeframe Signals**: Real-time indicator status across timeframes
+- **Performance Metrics**: Live trading statistics and results
+- **Preset Information**: Active configuration details
 
-### 3. **Zero-Lag Technical Analysis**
-- Phase-corrected indicators
-- Adaptive parameter adjustment
-- Multi-timeframe signal processing
+## ⚡ Advanced Features
 
-### 4. **Comprehensive Optimization**
-- Genetic algorithm parameter tuning
-- Real-time performance tracking
-- Risk-adjusted position sizing
+### Custom ADX Implementation
+Full custom implementation of Average Directional Index with:
+- True Range calculation
+- Directional Movement (+DM, -DM) computation
+- Wilder's smoothing technique
+- ADX threshold-based signal generation
 
-### 5. **Professional User Interface**
-- Five comprehensive information tables
-- Clean, institutional-grade design
-- Real-time performance feedback
+### Dynamic Parameter Updates
+Preset-based parameter updating system that:
+- Modifies indicator parameters based on selected preset
+- Maintains parameter consistency across timeframes
+- Provides preset descriptions for user guidance
 
-## ⚠️ Risk Disclaimer
+### Intelligent Position Management
+- Automatic position reversal on signal changes
+- Trade limiting to prevent over-trading
+- Daily trade counter with automatic reset
+- Maximum drawdown protection
 
-This strategy is for educational and research purposes. **Important considerations:**
+## 📝 Best Practices
 
-- **Past Performance**: Does not guarantee future results
-- **Risk Management**: Never risk more than you can afford to lose
-- **Market Conditions**: Performance varies with market volatility
-- **Backtesting**: Historical results may not reflect live trading
-- **Position Sizing**: Use appropriate risk per trade (1-2% recommended)
+### For Optimal Performance
+1. **Backtest Thoroughly**: Test different presets on historical data
+2. **Start Conservative**: Begin with "All Agree" strategy for higher accuracy
+3. **Monitor Drawdown**: Keep maximum drawdown below 15%
+4. **Use Appropriate Timeframes**: Match strategy timeframe to trading style
+5. **Regular Review**: Periodically assess and adjust parameters
 
-## 📝 Version History
+### Risk Management
+1. **Position Sizing**: Never risk more than 2% per trade
+2. **Diversification**: Don't rely on a single timeframe or indicator
+3. **Market Conditions**: Adjust presets based on market volatility
+4. **Stop Losses**: Always use stop-loss orders
+5. **Take Profits**: Set realistic profit targets
 
-- **v7.0**: Complete institutional-grade system with 7-phase implementation
-- **v6.0**: Added ML-enhanced Lorentzian Classification
-- **v5.0**: Integrated dynamic supply/demand zones
-- **v4.0**: Zero-lag adaptive technical analysis
-- **v3.0**: Auto-backtesting and optimization engine
-- **v2.0**: Enhanced UI with professional tables
-- **v1.0**: Advanced risk management and final integration
+## 🔍 Troubleshooting
 
-## 🤝 Contributing
+### Common Issues
+- **No Signals**: Check if "All Agree" is too conservative for current market
+- **Too Many Signals**: Consider using "All Agree" or increasing custom threshold
+- **Poor Performance**: Try different presets or adjust risk parameters
+- **Missing Plots**: Ensure correct indicator is selected for visualization
 
-Contributions welcome! Areas for enhancement:
-- **Additional ML Models**: Alternative classification algorithms
-- **Enhanced Risk Controls**: Advanced portfolio management
-- **Extended Timeframes**: Additional timeframe analysis
-- **Performance Optimizations**: Code efficiency improvements
+### Performance Tips
+- Use higher timeframes for less noise
+- Combine with fundamental analysis
+- Consider market session timing
+- Monitor volume confirmation
+- Watch for divergences between timeframes
 
-## 📄 License
+## 📄 License & Disclaimer
 
-This project is open source and available under the MIT License.
+This strategy is provided for educational and research purposes. Past performance does not guarantee future results. Always conduct thorough backtesting and consider your risk tolerance before live trading.
 
 ---
 
-**🎯 Institutional-Grade Trading System**  
-*Four Dropdown Selective Adaptive LC with ML Enhancement*  
-*Pine Script v6 | 2,835 Lines | Professional Implementation*
-
-**Created for TradingView Pine Script v6**  
-*Advanced Machine Learning Trading Strategy* 
+**Version**: Pine Script v6  
+**Compatibility**: TradingView Platform  
+**Last Updated**: 2024  
+**Author**: Trading Strategy Developer
