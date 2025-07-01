@@ -1357,61 +1357,63 @@ testZoneInteraction(zone, testType) =>
 
 // Update zone status and strength
 updateZones() =>
-    // Update supply zones
-    for i = 0 to array.size(supplyZones) - 1
-        zone = array.get(supplyZones, i)
-        
-        if zone.isActive
-            // Check for zone interaction
-            if testZoneInteraction(zone, "touch")
-                zone.touchCount += 1
+    // Update supply zones - check if array has elements first
+    if array.size(supplyZones) > 0
+        for i = 0 to array.size(supplyZones) - 1
+            zone = array.get(supplyZones, i)
+            
+            if zone.isActive
+                // Check for zone interaction
+                if testZoneInteraction(zone, "touch")
+                    zone.touchCount += 1
+                    
+                    // Increase strength with successful bounces
+                    if testZoneInteraction(zone, "bounce")
+                        zone.strength := math.min(zone.strength * 1.1, 1.0)
+                        zone.reliability := math.min(zone.reliability * 1.05, 1.0)
                 
-                // Increase strength with successful bounces
-                if testZoneInteraction(zone, "bounce")
-                    zone.strength := math.min(zone.strength * 1.1, 1.0)
-                    zone.reliability := math.min(zone.reliability * 1.05, 1.0)
-            
-            // Check for zone break
-            if testZoneInteraction(zone, "break")
-                zone.isActive := false
-                zone.strength := zone.strength * 0.5
-            
-            // Age-based strength decay
-            barsAge = bar_index - zone.barIndex
-            if barsAge > 100
-                zone.strength := zone.strength * 0.99
-                if zone.strength < 0.2
+                // Check for zone break
+                if testZoneInteraction(zone, "break")
                     zone.isActive := false
-        
-        array.set(supplyZones, i, zone)
+                    zone.strength := zone.strength * 0.5
+                
+                // Age-based strength decay
+                barsAge = bar_index - zone.barIndex
+                if barsAge > 100
+                    zone.strength := zone.strength * 0.99
+                    if zone.strength < 0.2
+                        zone.isActive := false
+            
+            array.set(supplyZones, i, zone)
     
-    // Update demand zones
-    for i = 0 to array.size(demandZones) - 1
-        zone = array.get(demandZones, i)
-        
-        if zone.isActive
-            // Check for zone interaction
-            if testZoneInteraction(zone, "touch")
-                zone.touchCount += 1
+    // Update demand zones - check if array has elements first
+    if array.size(demandZones) > 0
+        for i = 0 to array.size(demandZones) - 1
+            zone = array.get(demandZones, i)
+            
+            if zone.isActive
+                // Check for zone interaction
+                if testZoneInteraction(zone, "touch")
+                    zone.touchCount += 1
+                    
+                    // Increase strength with successful bounces
+                    if testZoneInteraction(zone, "bounce")
+                        zone.strength := math.min(zone.strength * 1.1, 1.0)
+                        zone.reliability := math.min(zone.reliability * 1.05, 1.0)
                 
-                // Increase strength with successful bounces
-                if testZoneInteraction(zone, "bounce")
-                    zone.strength := math.min(zone.strength * 1.1, 1.0)
-                    zone.reliability := math.min(zone.reliability * 1.05, 1.0)
-            
-            // Check for zone break
-            if testZoneInteraction(zone, "break")
-                zone.isActive := false
-                zone.strength := zone.strength * 0.5
-            
-            // Age-based strength decay
-            barsAge = bar_index - zone.barIndex
-            if barsAge > 100
-                zone.strength := zone.strength * 0.99
-                if zone.strength < 0.2
+                // Check for zone break
+                if testZoneInteraction(zone, "break")
                     zone.isActive := false
-        
-        array.set(demandZones, i, zone)
+                    zone.strength := zone.strength * 0.5
+                
+                // Age-based strength decay
+                barsAge = bar_index - zone.barIndex
+                if barsAge > 100
+                    zone.strength := zone.strength * 0.99
+                    if zone.strength < 0.2
+                        zone.isActive := false
+            
+            array.set(demandZones, i, zone)
 
 // Update zones on each bar
 updateZones()
@@ -1425,11 +1427,12 @@ getStrongestSupplyZone() =>
     var SupplyDemandZone strongestZone = na
     var float maxStrength = 0.0
     
-    for i = 0 to array.size(supplyZones) - 1
-        zone = array.get(supplyZones, i)
-        if zone.isActive and zone.strength > maxStrength
-            maxStrength := zone.strength
-            strongestZone := zone
+    if array.size(supplyZones) > 0
+        for i = 0 to array.size(supplyZones) - 1
+            zone = array.get(supplyZones, i)
+            if zone.isActive and zone.strength > maxStrength
+                maxStrength := zone.strength
+                strongestZone := zone
     
     strongestZone
 
@@ -1437,11 +1440,12 @@ getStrongestDemandZone() =>
     var SupplyDemandZone strongestZone = na
     var float maxStrength = 0.0
     
-    for i = 0 to array.size(demandZones) - 1
-        zone = array.get(demandZones, i)
-        if zone.isActive and zone.strength > maxStrength
-            maxStrength := zone.strength
-            strongestZone := zone
+    if array.size(demandZones) > 0
+        for i = 0 to array.size(demandZones) - 1
+            zone = array.get(demandZones, i)
+            if zone.isActive and zone.strength > maxStrength
+                maxStrength := zone.strength
+                strongestZone := zone
     
     strongestZone
 
@@ -2159,7 +2163,7 @@ getSignalColor(signal, strength) =>
 plotshape(buySignal and finalSignalStrength > 0.7, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=size.large)
 plotshape(sellSignal and finalSignalStrength > 0.7, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=size.large)
 
-// Medium signals (normal size)
+// Medium signals (normal size)  
 plotshape(buySignal and finalSignalStrength > 0.4 and finalSignalStrength <= 0.7, title="Medium Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("moderate"), size=size.normal)
 plotshape(sellSignal and finalSignalStrength > 0.4 and finalSignalStrength <= 0.7, title="Medium Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("moderate"), size=size.normal)
 
