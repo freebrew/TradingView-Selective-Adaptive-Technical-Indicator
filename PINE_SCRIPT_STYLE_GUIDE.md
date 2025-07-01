@@ -211,11 +211,33 @@ Use these regex patterns to find problematic code:
 5. **Ensures** Pine Script v6 compatibility
 6. **Prevents** parsing ambiguities
 
+## Rule 6: No Emojis in Code
+**FORBIDDEN: Use of emojis in Pine Script code, comments, or documentation**
+
+```pinescript
+// ❌ INCORRECT - Emojis not allowed
+// 🚀 Buy signal detected
+// 📊 Performance metrics
+// ✅ Entry condition met
+
+// ✅ CORRECT - Use descriptive text only  
+// Buy signal detected
+// Performance metrics
+// Entry condition met
+```
+
+### Reasons for Emoji Prohibition:
+1. **Encoding Issues**: Emojis can cause character encoding problems
+2. **Platform Compatibility**: Not all systems display emojis consistently
+3. **Professional Standards**: Institutional code should be emoji-free
+4. **Parsing Problems**: May interfere with Pine Script compilation
+5. **Code Clarity**: Text descriptions are more precise than emojis
+
 ## Exception: Comments and Documentation
 
 The only acceptable multi-line patterns are:
 - Comment blocks (`//`)
-- Documentation sections
+- Documentation sections  
 - Visual separators (`// ═══`)
 
 ## Final Recommendation
