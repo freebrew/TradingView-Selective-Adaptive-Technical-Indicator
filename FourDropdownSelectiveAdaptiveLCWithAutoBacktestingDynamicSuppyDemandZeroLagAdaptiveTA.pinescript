@@ -2449,32 +2449,28 @@ var float peakEquity = 100.0
 var float currentEquity = 100.0
 var int lastTradeDate = 0
 
-// Calculate current risk metrics
-updateRiskMetrics() =>
-    // Update equity tracking
-    if strategy.equity > peakEquity
-        peakEquity := strategy.equity
-    
-    currentEquity := strategy.equity
-    currentDrawdown := (peakEquity - currentEquity) / peakEquity * 100
-    
-    // Daily P&L tracking
-    if dayofweek != dayofweek[1]
-        dailyPnL := 0.0  // Reset daily P&L
-    
-    // Update daily P&L
-    if strategy.closedtrades > strategy.closedtrades[1]
-        lastTradePnL = strategy.closedtrades.exit_price(strategy.closedtrades - 1) - strategy.closedtrades.entry_price(strategy.closedtrades - 1)
-        dailyPnL += lastTradePnL
-        
-        // Track consecutive losses
-        if lastTradePnL < 0
-            consecutiveLosses += 1
-        else
-            consecutiveLosses := 0
+// Calculate current risk metrics (moved to global scope for Pine Script v6 compliance)
+// Update equity tracking
+if strategy.equity > peakEquity
+    peakEquity := strategy.equity
 
-// Update risk metrics on each bar
-updateRiskMetrics()
+currentEquity := strategy.equity
+currentDrawdown := (peakEquity - currentEquity) / peakEquity * 100
+
+// Daily P&L tracking
+if dayofweek != dayofweek[1]
+    dailyPnL := 0.0  // Reset daily P&L
+
+// Update daily P&L
+if strategy.closedtrades > strategy.closedtrades[1]
+    lastTradePnL = strategy.closedtrades.exit_price(strategy.closedtrades - 1) - strategy.closedtrades.entry_price(strategy.closedtrades - 1)
+    dailyPnL += lastTradePnL
+    
+    // Track consecutive losses
+    if lastTradePnL < 0
+        consecutiveLosses += 1
+    else
+        consecutiveLosses := 0
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ADVANCED POSITION SIZING SYSTEM
@@ -2552,27 +2548,8 @@ getAdvancedStopLoss(entryPrice, direction, signalStrength) =>
 var float trailingStopLevel = 0.0
 var float breakEvenLevel = 0.0
 
-updateTrailingStops(entryPrice, direction) =>
-    if riskConfig.useTrailingStop and strategy.position_size != 0
-        currentProfit = direction == 1 ? (close - entryPrice) / entryPrice : (entryPrice - close) / entryPrice
-        
-        // Activate trailing stop after 2% profit
-        if currentProfit > 0.02
-            atrTrailing = ta.atr(14) * 1.5
-            
-            if direction == 1  // Long position
-                newTrailingStop = close - atrTrailing
-                trailingStopLevel := math.max(trailingStopLevel, newTrailingStop)
-            else  // Short position
-                newTrailingStop = close + atrTrailing
-                trailingStopLevel := math.min(trailingStopLevel, newTrailingStop)
-    
-    // Breakeven stop after 1% profit
-    if riskConfig.useBreakevenStop and strategy.position_size != 0
-        currentProfit = direction == 1 ? (close - entryPrice) / entryPrice : (entryPrice - close) / entryPrice
-        
-        if currentProfit > 0.01
-            breakEvenLevel := entryPrice
+// Trailing stop logic moved to global scope for Pine Script v6 compliance
+// This logic will be executed directly where needed instead of in a function
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ⏰ TIME-BASED EXIT MANAGEMENT
@@ -2672,7 +2649,22 @@ if riskManagedSellSignal and strategy.position_size == 0
 
 // Update trailing stops for open positions
 if strategy.position_size > 0  // Long position
-    updateTrailingStops(strategy.position_avg_price, 1)
+    // Trailing stop logic for long positions
+    if riskConfig.useTrailingStop and strategy.position_size != 0
+        currentProfit = (close - strategy.position_avg_price) / strategy.position_avg_price
+        
+        // Activate trailing stop after 2% profit
+        if currentProfit > 0.02
+            atrTrailing = ta.atr(14) * 1.5
+            newTrailingStop = close - atrTrailing
+            trailingStopLevel := math.max(trailingStopLevel, newTrailingStop)
+    
+    // Breakeven stop after 1% profit
+    if riskConfig.useBreakevenStop and strategy.position_size != 0
+        currentProfit = (close - strategy.position_avg_price) / strategy.position_avg_price
+        
+        if currentProfit > 0.01
+            breakEvenLevel := strategy.position_avg_price
     
     // Apply trailing stop
     if trailingStopLevel > 0 and close <= trailingStopLevel
@@ -2683,7 +2675,22 @@ if strategy.position_size > 0  // Long position
         strategy.close("Long", comment="Breakeven Stop")
 
 if strategy.position_size < 0  // Short position
-    updateTrailingStops(strategy.position_avg_price, -1)
+    // Trailing stop logic for short positions
+    if riskConfig.useTrailingStop and strategy.position_size != 0
+        currentProfit = (strategy.position_avg_price - close) / strategy.position_avg_price
+        
+        // Activate trailing stop after 2% profit
+        if currentProfit > 0.02
+            atrTrailing = ta.atr(14) * 1.5
+            newTrailingStop = close + atrTrailing
+            trailingStopLevel := math.min(trailingStopLevel, newTrailingStop)
+    
+    // Breakeven stop after 1% profit
+    if riskConfig.useBreakevenStop and strategy.position_size != 0
+        currentProfit = (strategy.position_avg_price - close) / strategy.position_avg_price
+        
+        if currentProfit > 0.01
+            breakEvenLevel := strategy.position_avg_price
     
     // Apply trailing stop
     if trailingStopLevel > 0 and close >= trailingStopLevel
