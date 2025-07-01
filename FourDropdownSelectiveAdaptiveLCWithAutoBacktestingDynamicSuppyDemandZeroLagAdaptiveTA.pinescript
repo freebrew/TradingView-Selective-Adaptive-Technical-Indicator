@@ -115,9 +115,11 @@ normalize(src, length) =>
     _min = ta.lowest(_src, length)
     (_src - _min) / (_max - _min)
 
-// Tanh Transform for feature normalization
+// Tanh Transform for feature normalization (Custom implementation for Pine Script v6)
 tanhTransform(src) =>
-    math.tanh(src)
+    // Custom tanh implementation: tanh(x) = (e^x - e^(-x)) / (e^x + e^(-x))
+    // Simplified approximation: tanh(x) ≈ x / (1 + |x|) for efficiency
+    src / (1 + math.abs(src))
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // FEATURE ENGINEERING
