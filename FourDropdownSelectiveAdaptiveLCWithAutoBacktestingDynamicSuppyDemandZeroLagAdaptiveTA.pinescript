@@ -11,7 +11,7 @@ strategy("Four Dropdown Selective Adaptive LC",
          commission_value=0.1)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📚 LIBRARY IMPORTS - ONLY TWO REQUIRED
+//  LIBRARY IMPORTS - ONLY TWO REQUIRED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 import jdehorty/MLExtensions/2 as ml
 import jdehorty/KernelFunctions/2 as kernels
@@ -21,24 +21,16 @@ import jdehorty/KernelFunctions/2 as kernels
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Dropdown 1: ML Kernel Selection
-kernelType = input.string("Rational Quadratic", title="ML Kernel",
-    options=["Rational Quadratic", "Gaussian", "Periodic", "Locally Periodic"],
-    group="Core Settings")
+kernelType = input.string("Rational Quadratic", "ML Kernel", options=["Rational Quadratic", "Gaussian", "Periodic", "Locally Periodic"], group="Core Settings")
 
 // Dropdown 2: Market Structure Mode
-structureMode = input.string("Supply/Demand", title="Market Structure",
-    options=["Supply/Demand", "Support/Resistance", "Breakout/Reversal"],
-    group="Core Settings")
+structureMode = input.string("Supply/Demand", "Market Structure", options=["Supply/Demand", "Support/Resistance", "Breakout/Reversal"], group="Core Settings")
 
 // Dropdown 3: Signal Processing
-signalProcessing = input.string("Zero-Lag", title="Signal Processing",
-    options=["Zero-Lag", "Adaptive T3", "Standard", "Hybrid"],
-    group="Core Settings")
+signalProcessing = input.string("Zero-Lag", "Signal Processing", options=["Zero-Lag", "Adaptive T3", "Standard", "Hybrid"], group="Core Settings")
 
 // Dropdown 4: Optimization Mode
-optimizationMode = input.string("Auto-Backtest", title="Optimization",
-    options=["Manual", "Auto-Backtest", "Real-time Adaptive", "Performance Analysis"],
-    group="Core Settings")
+optimizationMode = input.string("Auto-Backtest", "Optimization", options=["Manual", "Auto-Backtest", "Real-time Adaptive", "Performance Analysis"], group="Core Settings")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // LORENTZIAN CLASSIFICATION SETTINGS
@@ -202,22 +194,13 @@ signalCurrent = rsiToSignal(rsi)
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Multi-Timeframe Signals Table (Right)
-var table mtfTable = table.new(position.bottom_right, 6, 6, 
-    bgcolor=color.new(color.black, 80), 
-    border_width=1, 
-    border_color=color.gray)
+var table mtfTable = table.new(position.bottom_right, 6, 6, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
 
 // Performance Metrics Table (Left)  
-var table perfTable = table.new(position.bottom_left, 2, 8,
-    bgcolor=color.new(color.black, 80),
-    border_width=1,
-    border_color=color.gray)
+var table perfTable = table.new(position.bottom_left, 2, 8, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
 
 // Optimization Results Table (Top Right)
-var table optTable = table.new(position.top_right, 8, 8,
-    bgcolor=color.new(color.black, 80),
-    border_width=1,
-    border_color=color.gray)
+var table optTable = table.new(position.top_right, 8, 8, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // BASIC SIGNAL GENERATION (Phase 1 Implementation)
@@ -278,10 +261,8 @@ if barstate.islast and showTables
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Plot buy/sell signals
-plotshape(buySignal and showSignals, title="Buy Signal", location=location.belowbar, 
-          style=shape.triangleup, size=size.small, color=color.green)
-plotshape(sellSignal and showSignals, title="Sell Signal", location=location.abovebar, 
-          style=shape.triangledown, size=size.small, color=color.red)
+plotshape(buySignal and showSignals, title="Buy Signal", location=location.belowbar, style=shape.triangleup, size=size.small, color=color.green)
+plotshape(sellSignal and showSignals, title="Sell Signal", location=location.abovebar, style=shape.triangledown, size=size.small, color=color.red)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // BASIC STRATEGY EXECUTION (Phase 1)
@@ -296,15 +277,11 @@ positionSize = riskAmount / (close - stopLossPrice)
 // Entry conditions
 if buySignal and strategy.position_size == 0
     strategy.entry("Long", strategy.long, qty=positionSize)
-    strategy.exit("Long Exit", "Long", 
-                  stop=close * (1 - stopLossPercent / 100), 
-                  limit=close * (1 + takeProfitPercent / 100))
+    strategy.exit("Long Exit", "Long", stop=close * (1 - stopLossPercent / 100), limit=close * (1 + takeProfitPercent / 100))
 
 if sellSignal and strategy.position_size == 0
     strategy.entry("Short", strategy.short, qty=positionSize)
-    strategy.exit("Short Exit", "Short", 
-                  stop=close * (1 + stopLossPercent / 100), 
-                  limit=close * (1 - takeProfitPercent / 100))
+    strategy.exit("Short Exit", "Short", stop=close * (1 + stopLossPercent / 100), limit=close * (1 - takeProfitPercent / 100))
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // PHASE 1 COMPLETE - FOUNDATION ESTABLISHED
@@ -337,21 +314,15 @@ getFeatureVector(index) =>
     array.clear(features)
     
     // Feature 1: Normalized RSI with kernel enhancement
-    f1 = kernelType == "Gaussian" ? 
-         kernels.gaussian(rsiFeature[index], 10, 1.0) : 
-         rsiFeature[index]
+    f1 = kernelType == "Gaussian" ? kernels.gaussian(rsiFeature[index], 10, 1.0) : rsiFeature[index]
     array.push(features, f1)
     
     // Feature 2: Normalized CCI with adaptive smoothing
-    f2 = signalProcessing == "Adaptive T3" ? 
-         ml.n_cci(hlc3[index], cciLength) * t3Factor : 
-         cciFeature[index]
+    f2 = signalProcessing == "Adaptive T3" ? ml.n_cci(hlc3[index], cciLength) * t3Factor : cciFeature[index]
     array.push(features, f2)
     
     // Feature 3: WaveTrend with zero-lag processing
-    f3 = signalProcessing == "Zero-Lag" ? 
-         wtFeature[index] - wtFeature[index + 1] : 
-         wtFeature[index]
+    f3 = signalProcessing == "Zero-Lag" ? wtFeature[index] - wtFeature[index + 1] : wtFeature[index]
     array.push(features, f3)
     
     // Feature 4: ADX with trend strength weighting
@@ -381,7 +352,7 @@ getOptimalFeatureCount() =>
         3  // Low volatility - use core features only
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📐 ENHANCED LORENTZIAN DISTANCE CALCULATION
+//  ENHANCED LORENTZIAN DISTANCE CALCULATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Lorentzian distance function with dynamic weighting
@@ -483,7 +454,7 @@ findKNearestNeighbors(currentFeatures, k) =>
     kNeighbors
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎲 PREDICTION ENGINE WITH CONFIDENCE SCORING
+//  PREDICTION ENGINE WITH CONFIDENCE SCORING
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Enhanced prediction with multiple weighting schemes
@@ -518,8 +489,7 @@ makePrediction(neighbors) =>
     
     // Convert to discrete signal with threshold
     confidenceThreshold = 0.3
-    signal = confidence > confidenceThreshold ? 
-             (prediction > 0.1 ? 1 : (prediction < -0.1 ? -1 : 0)) : 0
+    signal = confidence > confidenceThreshold ? (prediction > 0.1 ? 1 : (prediction < -0.1 ? -1 : 0)) : 0
     
     [signal, confidence]
 
@@ -536,13 +506,10 @@ getOptimalNeighborCount() =>
     atrMA = ta.sma(atr, 50)
     volatilityRatio = atr / atrMA
     
-    volatilityAdjustment = volatilityRatio > 1.5 ? 2 : 
-                          volatilityRatio > 1.2 ? 1 : 
-                          volatilityRatio < 0.8 ? -1 : 0
+    volatilityAdjustment = volatilityRatio > 1.5 ? 2 : volatilityRatio > 1.2 ? 1 : volatilityRatio < 0.8 ? -1 : 0
     
     // Adjust based on trend strength
-    trendAdjustment = adxValue > 30 ? 1 : 
-                     adxValue < 20 ? -1 : 0
+    trendAdjustment = adxValue > 30 ? 1 : adxValue < 20 ? -1 : 0
     
     // Adjust based on volume
     volumeMA = ta.sma(volume, 20)
@@ -590,8 +557,7 @@ kernelEnhancedPrediction() =>
 smoothedPrediction = kernelEnhancedPrediction()
 
 // Convert smoothed prediction to signal
-smoothedSignal = smoothedPrediction > 0.2 ? 1 : 
-                smoothedPrediction < -0.2 ? -1 : 0
+smoothedSignal = smoothedPrediction > 0.2 ? 1 : smoothedPrediction < -0.2 ? -1 : 0
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ADAPTIVE THRESHOLD SYSTEM
@@ -618,8 +584,7 @@ getAdaptiveThreshold() =>
 adaptiveThreshold = getAdaptiveThreshold()
 
 // Apply adaptive threshold
-adaptiveSignal = smoothedPrediction > adaptiveThreshold ? 1 : 
-                smoothedPrediction < -adaptiveThreshold ? -1 : 0
+adaptiveSignal = smoothedPrediction > adaptiveThreshold ? 1 : smoothedPrediction < -adaptiveThreshold ? -1 : 0
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // SIGNAL COMBINATION AND CONSENSUS
@@ -634,10 +599,7 @@ getCombinedSignal() =>
     adaptiveWeight = 0.1  // Adaptive threshold
     
     // Calculate weighted signal
-    weightedSignal = (lcSignal * lcWeight) + 
-                    (signalCurrent * mtfWeight) + 
-                    (smoothedSignal * kernelWeight) + 
-                    (adaptiveSignal * adaptiveWeight)
+    weightedSignal = (lcSignal * lcWeight) + (signalCurrent * mtfWeight) + (smoothedSignal * kernelWeight) + (adaptiveSignal * adaptiveWeight)
     
     // Convert to discrete signal
     if weightedSignal > 0.3
@@ -877,9 +839,7 @@ if strategy.position_size != strategy.position_size[1]
         // Trade closed
         if entryPrice > 0
             // Calculate trade return
-            tradeReturn = entryDirection == "Long" ? 
-                         (close - entryPrice) / entryPrice : 
-                         (entryPrice - close) / entryPrice
+            tradeReturn = entryDirection == "Long" ? (close - entryPrice) / entryPrice : (entryPrice - close) / entryPrice
             
             array.push(tradeReturns, tradeReturn)
             
@@ -926,29 +886,23 @@ getOptimizationSets() =>
     array.clear(sets)
     
     // Base parameter set (current settings)
-    baseSet = OptimizationSet.new(rsiLength, cciLength, adxLength, neighborsCount, 
-                                  riskPerTrade, stopLossPercent, takeProfitPercent, 
-                                  kernelType, signalProcessing, 0.0)
+    baseSet = OptimizationSet.new(rsiLength, cciLength, adxLength, neighborsCount, riskPerTrade, stopLossPercent, takeProfitPercent, kernelType, signalProcessing, 0.0)
     array.push(sets, baseSet)
     
     // Conservative set
-    conservativeSet = OptimizationSet.new(21, 25, 18, 6, 1.0, 3.0, 6.0, 
-                                         "Gaussian", "Adaptive T3", 0.0)
+    conservativeSet = OptimizationSet.new(21, 25, 18, 6, 1.0, 3.0, 6.0, "Gaussian", "Adaptive T3", 0.0)
     array.push(sets, conservativeSet)
     
     // Aggressive set
-    aggressiveSet = OptimizationSet.new(10, 15, 12, 12, 3.0, 2.0, 8.0, 
-                                       "Rational Quadratic", "Zero-Lag", 0.0)
+    aggressiveSet = OptimizationSet.new(10, 15, 12, 12, 3.0, 2.0, 8.0, "Rational Quadratic", "Zero-Lag", 0.0)
     array.push(sets, aggressiveSet)
     
     // Balanced set
-    balancedSet = OptimizationSet.new(16, 18, 16, 8, 2.0, 2.5, 7.0, 
-                                     "Periodic", "Standard", 0.0)
+    balancedSet = OptimizationSet.new(16, 18, 16, 8, 2.0, 2.5, 7.0, "Periodic", "Standard", 0.0)
     array.push(sets, balancedSet)
     
     // Volatility-adaptive set
-    volatilitySet = OptimizationSet.new(12, 20, 14, 10, 2.5, 4.0, 5.0, 
-                                       "Locally Periodic", "Adaptive T3", 0.0)
+    volatilitySet = OptimizationSet.new(12, 20, 14, 10, 2.5, 4.0, 5.0, "Locally Periodic", "Adaptive T3", 0.0)
     array.push(sets, volatilitySet)
     
     sets
@@ -1026,8 +980,7 @@ getDynamicParameters() =>
     [dynRsiLength, dynCciLength, dynAdxLength, dynNeighbors, dynRisk, dynStopLoss, dynTakeProfit]
 
 // Get dynamic parameters when optimization mode is "Auto-Adaptive"
-[dynamicRsiLength, dynamicCciLength, dynamicAdxLength, dynamicNeighbors, 
- dynamicRisk, dynamicStopLoss, dynamicTakeProfit] = getDynamicParameters()
+[dynamicRsiLength, dynamicCciLength, dynamicAdxLength, dynamicNeighbors, dynamicRisk, dynamicStopLoss, dynamicTakeProfit] = getDynamicParameters()
 
 // Apply dynamic parameters if auto-adaptive mode is enabled
 finalRsiLength = optimizationMode == "Auto-Adaptive" ? dynamicRsiLength : rsiLength
@@ -1106,9 +1059,7 @@ getKellyPositionSize() =>
         finalRisk
 
 // Choose position sizing method
-optimalPositionSize = optimizationMode == "Kelly Criterion" ? getKellyPositionSize() :
-                     optimizationMode == "Dynamic Risk" ? getDynamicPositionSize() :
-                     finalRisk
+optimalPositionSize = optimizationMode == "Kelly Criterion" ? getKellyPositionSize() : optimizationMode == "Dynamic Risk" ? getDynamicPositionSize() : finalRisk
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ENHANCED STRATEGY EXECUTION WITH OPTIMIZATION
@@ -1121,24 +1072,18 @@ stopLossPrice = close * (1 - finalStopLoss / 100)
 optimizedPositionSize = riskAmount / (close - stopLossPrice)
 
 // Enhanced entry conditions with optimization
-shouldEnterLong = buySignal and strategy.position_size == 0 and 
-                 (optimizationMode != "Conservative" or lcConfidence > 0.6)
+shouldEnterLong = buySignal and strategy.position_size == 0 and (optimizationMode != "Conservative" or lcConfidence > 0.6)
 
-shouldEnterShort = sellSignal and strategy.position_size == 0 and 
-                  (optimizationMode != "Conservative" or lcConfidence > 0.6)
+shouldEnterShort = sellSignal and strategy.position_size == 0 and (optimizationMode != "Conservative" or lcConfidence > 0.6)
 
 // Execute trades with optimized parameters
 if shouldEnterLong
     strategy.entry("Long", strategy.long, qty=optimizedPositionSize)
-    strategy.exit("Long Exit", "Long", 
-                  stop=close * (1 - finalStopLoss / 100), 
-                  limit=close * (1 + finalTakeProfit / 100))
+    strategy.exit("Long Exit", "Long", stop=close * (1 - finalStopLoss / 100), limit=close * (1 + finalTakeProfit / 100))
 
 if shouldEnterShort
     strategy.entry("Short", strategy.short, qty=optimizedPositionSize)
-    strategy.exit("Short Exit", "Short", 
-                  stop=close * (1 + finalStopLoss / 100), 
-                  limit=close * (1 - finalTakeProfit / 100))
+    strategy.exit("Short Exit", "Short", stop=close * (1 + finalStopLoss / 100), limit=close * (1 - finalTakeProfit / 100))
 
 // Dynamic exit based on optimization mode
 if shouldExit() and optimizationMode == "Dynamic Risk"
@@ -1303,8 +1248,7 @@ calculateZoneStrength(priceLevel, zoneType, volumeAtCreation, momentum) =>
     atrStrength = math.min(math.abs(close - priceLevel) / atr, 3.0) / 3.0
     
     // Weighted combination
-    strength := (volumeStrength * 0.3) + (momentumStrength * 0.25) + 
-                (distanceStrength * 0.25) + (atrStrength * 0.2)
+    strength := (volumeStrength * 0.3) + (momentumStrength * 0.25) + (distanceStrength * 0.25) + (atrStrength * 0.2)
     
     math.max(0.1, math.min(strength, 1.0))
 
@@ -1322,9 +1266,7 @@ createSupplyZone(pivotIndex) =>
         strength = calculateZoneStrength(topPrice, "Supply", zoneVolume, momentum)
         
         // Create zone
-        newZone = SupplyDemandZone.new(
-            topPrice, bottomPrice, time[pivotIndex], time, "Supply", 
-            strength, 0, true, zoneVolume, momentum, bar_index - pivotIndex, strength)
+        newZone = SupplyDemandZone.new(topPrice, bottomPrice, time[pivotIndex], time, "Supply", strength, 0, true, zoneVolume, momentum, bar_index - pivotIndex, strength)
         
         // Add to supply zones array (limit to maxZones)
         array.push(supplyZones, newZone)
@@ -1345,9 +1287,7 @@ createDemandZone(pivotIndex) =>
         strength = calculateZoneStrength(bottomPrice, "Demand", zoneVolume, momentum)
         
         // Create zone
-        newZone = SupplyDemandZone.new(
-            topPrice, bottomPrice, time[pivotIndex], time, "Demand", 
-            strength, 0, true, zoneVolume, momentum, bar_index - pivotIndex, strength)
+        newZone = SupplyDemandZone.new(topPrice, bottomPrice, time[pivotIndex], time, "Demand", strength, 0, true, zoneVolume, momentum, bar_index - pivotIndex, strength)
         
         // Add to demand zones array (limit to maxZones)
         array.push(demandZones, newZone)
@@ -1668,13 +1608,9 @@ getZoneInfo() =>
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Final zone-enhanced buy/sell signals
-zoneEnhancedBuySignal = zoneEnhancedSignal == 1 and signal5m >= 0 and signal30m >= 0 and 
-                       (na(strongestSupply) or not strongestSupply.isActive or 
-                        close < strongestSupply.bottomPrice or strongestSupply.strength < 0.5)
+zoneEnhancedBuySignal = zoneEnhancedSignal == 1 and signal5m >= 0 and signal30m >= 0 and (na(strongestSupply) or not strongestSupply.isActive or close < strongestSupply.bottomPrice or strongestSupply.strength < 0.5)
 
-zoneEnhancedSellSignal = zoneEnhancedSignal == -1 and signal5m <= 0 and signal30m <= 0 and 
-                        (na(strongestDemand) or not strongestDemand.isActive or 
-                         close > strongestDemand.topPrice or strongestDemand.strength < 0.5)
+zoneEnhancedSellSignal = zoneEnhancedSignal == -1 and signal5m <= 0 and signal30m <= 0 and (na(strongestDemand) or not strongestDemand.isActive or close > strongestDemand.topPrice or strongestDemand.strength < 0.5)
 
 // Update main signals with zone enhancement
 buySignal := zoneEnhancedBuySignal
@@ -1699,8 +1635,7 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 23, str.tostring(math.round(avgDemandStr * 100, 1)) + "%", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     
     table.cell(perfTable, 0, 24, "Zone Modifier", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    modifierColor = zoneSignalModifier > 1 ? color.new(color.green, 80) : 
-                   zoneSignalModifier < 1 ? color.new(color.red, 80) : color.new(color.gray, 80)
+    modifierColor = zoneSignalModifier > 1 ? color.new(color.green, 80) : zoneSignalModifier < 1 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(perfTable, 1, 24, str.tostring(math.round(zoneSignalModifier, 2)) + "x", bgcolor=modifierColor, text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -2058,11 +1993,9 @@ getZeroLagExitSignal(currentPosition) =>
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Update main buy/sell signals with zero-lag enhancement
-zlEnhancedBuySignal = finalEnhancedSignal == 1 and zlTrendSignal >= 0 and 
-                     not getZeroLagExitSignal(1) and currentTrendStrength > -0.3
+zlEnhancedBuySignal = finalEnhancedSignal == 1 and zlTrendSignal >= 0 and not getZeroLagExitSignal(1) and currentTrendStrength > -0.3
 
-zlEnhancedSellSignal = finalEnhancedSignal == -1 and zlTrendSignal <= 0 and 
-                      not getZeroLagExitSignal(-1) and currentTrendStrength < 0.3
+zlEnhancedSellSignal = finalEnhancedSignal == -1 and zlTrendSignal <= 0 and not getZeroLagExitSignal(-1) and currentTrendStrength < 0.3
 
 // Apply zero-lag enhancement to main signals
 buySignal := zlEnhancedBuySignal
@@ -2075,18 +2008,15 @@ sellSignal := zlEnhancedSellSignal
 if barstate.islast and showTables
     // Add zero-lag specific metrics to performance table
     table.cell(perfTable, 0, 25, "ZL Trend Str", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    trendColor = currentTrendStrength > 0.3 ? color.new(color.green, 80) : 
-                currentTrendStrength < -0.3 ? color.new(color.red, 80) : color.new(color.gray, 80)
+    trendColor = currentTrendStrength > 0.3 ? color.new(color.green, 80) : currentTrendStrength < -0.3 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(perfTable, 1, 25, str.tostring(math.round(currentTrendStrength, 3)), bgcolor=trendColor, text_color=color.white, text_size=size.small)
     
     table.cell(perfTable, 0, 26, "ZL Signal Acc", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    accColor = zlSignalAccuracy > 0.6 ? color.new(color.green, 80) : 
-              zlSignalAccuracy < 0.4 ? color.new(color.red, 80) : color.new(color.gray, 80)
+    accColor = zlSignalAccuracy > 0.6 ? color.new(color.green, 80) : zlSignalAccuracy < 0.4 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(perfTable, 1, 26, str.tostring(math.round(zlSignalAccuracy * 100, 1)) + "%", bgcolor=accColor, text_color=color.white, text_size=size.small)
     
     table.cell(perfTable, 0, 27, "Adaptive RSI", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    rsiColor = zlRSI > 70 ? color.new(color.red, 80) : 
-              zlRSI < 30 ? color.new(color.green, 80) : color.new(color.gray, 80)
+    rsiColor = zlRSI > 70 ? color.new(color.red, 80) : zlRSI < 30 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(perfTable, 1, 27, str.tostring(math.round(zlRSI, 1)), bgcolor=rsiColor, text_color=color.white, text_size=size.small)
     
     table.cell(perfTable, 0, 28, "ZL MACD", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
@@ -2094,8 +2024,7 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 28, str.tostring(math.round(zlMACD, 4)), bgcolor=macdColor, text_color=color.white, text_size=size.small)
     
     table.cell(perfTable, 0, 29, "Volatility", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    volColor = currentVolatility > 0.02 ? color.new(color.red, 80) : 
-              currentVolatility < 0.01 ? color.new(color.green, 80) : color.new(color.gray, 80)
+    volColor = currentVolatility > 0.02 ? color.new(color.red, 80) : currentVolatility < 0.01 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(perfTable, 1, 29, str.tostring(math.round(currentVolatility * 100, 2)) + "%", bgcolor=volColor, text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -2196,24 +2125,18 @@ plotSignalShape(signal, signalType, strength) =>
         
         if signal > 0
             if signalType == "main"
-                plotshape(true, title="Strong Buy", style=shape.triangleup, location=location.belowbar, 
-                         color=getBullishColor("strong"), size=shapeSize)
+                plotshape(true, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=shapeSize)
             else if signalType == "zone"
-                plotshape(true, title="Zone Buy", style=shape.circle, location=location.belowbar, 
-                         color=getBullishColor("moderate"), size=size.tiny)
+                plotshape(true, title="Zone Buy", style=shape.circle, location=location.belowbar, color=getBullishColor("moderate"), size=size.tiny)
             else if signalType == "zl"
-                plotshape(true, title="ZL Buy", style=shape.diamond, location=location.belowbar, 
-                         color=getBullishColor("weak"), size=size.tiny)
+                plotshape(true, title="ZL Buy", style=shape.diamond, location=location.belowbar, color=getBullishColor("weak"), size=size.tiny)
         else
             if signalType == "main"
-                plotshape(true, title="Strong Sell", style=shape.triangledown, location=location.abovebar, 
-                         color=getBearishColor("strong"), size=shapeSize)
+                plotshape(true, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=shapeSize)
             else if signalType == "zone"
-                plotshape(true, title="Zone Sell", style=shape.circle, location=location.abovebar, 
-                         color=getBearishColor("moderate"), size=size.tiny)
+                plotshape(true, title="Zone Sell", style=shape.circle, location=location.abovebar, color=getBearishColor("moderate"), size=size.tiny)
             else if signalType == "zl"
-                plotshape(true, title="ZL Sell", style=shape.diamond, location=location.abovebar, 
-                         color=getBearishColor("weak"), size=size.tiny)
+                plotshape(true, title="ZL Sell", style=shape.diamond, location=location.abovebar, color=getBearishColor("weak"), size=size.tiny)
 
 // Plot enhanced signals with different markers
 if buySignal
@@ -2265,10 +2188,7 @@ if barstate.islast and showTables
         table.delete(enhancedSignalsTable)
     
     // Create new enhanced signals table
-    enhancedSignalsTable := table.new(position.top_left, 3, 7, 
-                                     bgcolor=signalTableConfig.bgColor, 
-                                     border_width=2, 
-                                     border_color=getNeutralColor("border"))
+    enhancedSignalsTable := table.new(position.top_left, 3, 7, bgcolor=signalTableConfig.bgColor, border_width=2, border_color=getNeutralColor("border"))
     
     // Header row with enhanced styling
     table.cell(enhancedSignalsTable, 0, 0, "SIGNALS", bgcolor=color.new(color.blue, 70), text_color=color.white, text_size=size.normal)
@@ -2326,10 +2246,7 @@ if barstate.islast and showTables
         table.delete(enhancedZonesTable)
     
     // Create new enhanced zones table
-    enhancedZonesTable := table.new(position.bottom_left, 3, 8, 
-                                   bgcolor=zoneTableConfig.bgColor, 
-                                   border_width=2, 
-                                   border_color=getNeutralColor("border"))
+    enhancedZonesTable := table.new(position.bottom_left, 3, 8, bgcolor=zoneTableConfig.bgColor, border_width=2, border_color=getNeutralColor("border"))
     
     // Header row
     table.cell(enhancedZonesTable, 0, 0, "ZONES", bgcolor=color.new(color.teal, 70), text_color=color.white, text_size=size.normal)
@@ -2348,8 +2265,7 @@ if barstate.islast and showTables
     
     // Zone modifier
     table.cell(enhancedZonesTable, 0, 3, "Modifier", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    modifierColor = zoneSignalModifier > 1 ? color.new(color.green, 80) : 
-                   zoneSignalModifier < 1 ? color.new(color.red, 80) : color.new(color.gray, 80)
+    modifierColor = zoneSignalModifier > 1 ? color.new(color.green, 80) : zoneSignalModifier < 1 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(enhancedZonesTable, 1, 3, str.tostring(math.round(zoneSignalModifier, 2)) + "x", bgcolor=modifierColor, text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 2, 3, zoneSignalModifier > 1.1 ? "BOOST" : zoneSignalModifier < 0.9 ? "REDUCE" : "NEUTRAL", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
@@ -2389,10 +2305,7 @@ if barstate.islast and showTables
         table.delete(enhancedIndicatorsTable)
     
     // Create new enhanced indicators table
-    enhancedIndicatorsTable := table.new(position.bottom_right, 3, 10, 
-                                        bgcolor=indicatorTableConfig.bgColor, 
-                                        border_width=2, 
-                                        border_color=getNeutralColor("border"))
+    enhancedIndicatorsTable := table.new(position.bottom_right, 3, 10, bgcolor=indicatorTableConfig.bgColor, border_width=2, border_color=getNeutralColor("border"))
     
     // Header row
     table.cell(enhancedIndicatorsTable, 0, 0, "INDICATORS", bgcolor=color.new(color.purple, 70), text_color=color.white, text_size=size.normal)
@@ -2401,16 +2314,14 @@ if barstate.islast and showTables
     
     // Zero-lag trend strength
     table.cell(enhancedIndicatorsTable, 0, 1, "ZL Trend", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    trendColor = currentTrendStrength > 0.3 ? color.new(color.green, 80) : 
-                currentTrendStrength < -0.3 ? color.new(color.red, 80) : color.new(color.gray, 80)
+    trendColor = currentTrendStrength > 0.3 ? color.new(color.green, 80) : currentTrendStrength < -0.3 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 1, str.tostring(math.round(currentTrendStrength, 3)), bgcolor=trendColor, text_color=color.white, text_size=size.small)
     trendSignalText = currentTrendStrength > 0.5 ? "STRONG" : currentTrendStrength > 0.2 ? "UP" : currentTrendStrength < -0.5 ? "STRONG" : currentTrendStrength < -0.2 ? "DOWN" : "FLAT"
     table.cell(enhancedIndicatorsTable, 2, 1, trendSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Zero-lag RSI
     table.cell(enhancedIndicatorsTable, 0, 2, "ZL RSI", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    rsiColor = zlRSI > 70 ? color.new(color.red, 80) : 
-              zlRSI < 30 ? color.new(color.green, 80) : color.new(color.gray, 80)
+    rsiColor = zlRSI > 70 ? color.new(color.red, 80) : zlRSI < 30 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 2, str.tostring(math.round(zlRSI, 1)), bgcolor=rsiColor, text_color=color.white, text_size=size.small)
     rsiSignalText = zlRSI > 80 ? "OVERBOUGHT" : zlRSI > 70 ? "HIGH" : zlRSI < 20 ? "OVERSOLD" : zlRSI < 30 ? "LOW" : "NEUTRAL"
     table.cell(enhancedIndicatorsTable, 2, 2, rsiSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
@@ -2424,32 +2335,28 @@ if barstate.islast and showTables
     
     // Stochastic
     table.cell(enhancedIndicatorsTable, 0, 4, "ZL Stoch", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    stochColor = zlStochK > 80 ? color.new(color.red, 80) : 
-                zlStochK < 20 ? color.new(color.green, 80) : color.new(color.gray, 80)
+    stochColor = zlStochK > 80 ? color.new(color.red, 80) : zlStochK < 20 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 4, str.tostring(math.round(zlStochK, 1)), bgcolor=stochColor, text_color=color.white, text_size=size.small)
     stochSignalText = zlStochK > zlStochD ? "BULLISH" : "BEARISH"
     table.cell(enhancedIndicatorsTable, 2, 4, stochSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // CCI
     table.cell(enhancedIndicatorsTable, 0, 5, "ZL CCI", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    cciColor = zlCCI > 100 ? color.new(color.red, 80) : 
-              zlCCI < -100 ? color.new(color.green, 80) : color.new(color.gray, 80)
+    cciColor = zlCCI > 100 ? color.new(color.red, 80) : zlCCI < -100 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 5, str.tostring(math.round(zlCCI, 1)), bgcolor=cciColor, text_color=color.white, text_size=size.small)
     cciSignalText = zlCCI > 100 ? "OVERBOUGHT" : zlCCI < -100 ? "OVERSOLD" : zlCCI > 0 ? "BULLISH" : "BEARISH"
     table.cell(enhancedIndicatorsTable, 2, 5, cciSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Volatility
     table.cell(enhancedIndicatorsTable, 0, 6, "Volatility", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    volColor = currentVolatility > 0.02 ? color.new(color.red, 80) : 
-              currentVolatility < 0.01 ? color.new(color.green, 80) : color.new(color.gray, 80)
+    volColor = currentVolatility > 0.02 ? color.new(color.red, 80) : currentVolatility < 0.01 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 6, str.tostring(math.round(currentVolatility * 100, 2)) + "%", bgcolor=volColor, text_color=color.white, text_size=size.small)
     volSignalText = currentVolatility > 0.025 ? "HIGH" : currentVolatility > 0.015 ? "ELEVATED" : currentVolatility < 0.008 ? "LOW" : "NORMAL"
     table.cell(enhancedIndicatorsTable, 2, 6, volSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Signal accuracy
     table.cell(enhancedIndicatorsTable, 0, 7, "ZL Accuracy", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    accColor = zlSignalAccuracy > 0.6 ? color.new(color.green, 80) : 
-              zlSignalAccuracy < 0.4 ? color.new(color.red, 80) : color.new(color.gray, 80)
+    accColor = zlSignalAccuracy > 0.6 ? color.new(color.green, 80) : zlSignalAccuracy < 0.4 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 7, str.tostring(math.round(zlSignalAccuracy * 100, 1)) + "%", bgcolor=accColor, text_color=color.white, text_size=size.small)
     accSignalText = zlSignalAccuracy > 0.7 ? "EXCELLENT" : zlSignalAccuracy > 0.6 ? "GOOD" : zlSignalAccuracy > 0.5 ? "FAIR" : "POOR"
     table.cell(enhancedIndicatorsTable, 2, 7, accSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
@@ -2463,9 +2370,7 @@ if barstate.islast and showTables
     // Final signal strength
     finalSignalStrength = math.abs(finalEnhancedSignal)
     table.cell(enhancedIndicatorsTable, 0, 9, "Final Signal", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    finalColor = finalSignalStrength > 0.8 ? color.new(color.lime, 60) : 
-                finalSignalStrength > 0.6 ? color.new(color.green, 80) : 
-                finalSignalStrength > 0.3 ? color.new(color.yellow, 80) : color.new(color.gray, 80)
+    finalColor = finalSignalStrength > 0.8 ? color.new(color.lime, 60) : finalSignalStrength > 0.6 ? color.new(color.green, 80) : finalSignalStrength > 0.3 ? color.new(color.yellow, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 9, str.tostring(math.round(finalSignalStrength * 100, 0)) + "%", bgcolor=finalColor, text_color=color.white, text_size=size.small)
     finalText = finalSignalStrength > 0.8 ? "VERY STRONG" : finalSignalStrength > 0.6 ? "STRONG" : finalSignalStrength > 0.3 ? "WEAK" : "NONE"
     table.cell(enhancedIndicatorsTable, 2, 9, finalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
@@ -2481,15 +2386,15 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 0, "VALUE", bgcolor=color.new(color.navy, 70), text_color=color.white, text_size=size.normal)
     
     // Add visual separators and enhanced formatting for key metrics
-    if totalTrades > 0
+    if currentMetrics.totalTrades > 0
         // Highlight exceptional performance
-        if winRate > 70
+        if currentMetrics.winRate > 0.70
             table.cell(perfTable, 0, 4, "Win Rate", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
-            table.cell(perfTable, 1, 4, str.tostring(math.round(winRate, 1)) + "%", bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
+            table.cell(perfTable, 1, 4, str.tostring(math.round(currentMetrics.winRate * 100, 1)) + "%", bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
         
-        if sharpeRatio > 2.0
+        if currentMetrics.sharpeRatio > 2.0
             table.cell(perfTable, 0, 8, "Sharpe Ratio", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
-            table.cell(perfTable, 1, 8, str.tostring(math.round(sharpeRatio, 2)), bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
+            table.cell(perfTable, 1, 8, str.tostring(math.round(currentMetrics.sharpeRatio, 2)), bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // PHASE 6 COMPLETE - ENHANCED UI & VISUALIZATION ESTABLISHED
@@ -2530,17 +2435,7 @@ type RiskConfig
     bool useTimeBasedExit       // Enable time-based exits
 
 // Initialize risk management configuration
-riskConfig = RiskConfig.new(
-    maxDrawdownLimit = 15.0,        // 15% max drawdown
-    maxPositionSize = 10.0,         // 10% max position
-    maxDailyLoss = 3.0,             // 3% max daily loss
-    maxConsecutiveLosses = 5,       // 5 consecutive losses max
-    volatilityMultiplier = 1.5,     // 1.5x volatility adjustment
-    correlationLimit = 0.8,         // 80% max correlation
-    useTrailingStop = true,
-    useBreakevenStop = true,
-    useTimeBasedExit = true
-)
+riskConfig = RiskConfig.new(maxDrawdownLimit = 15.0, maxPositionSize = 10.0, maxDailyLoss = 3.0, maxConsecutiveLosses = 5, volatilityMultiplier = 1.5, correlationLimit = 0.8, useTrailingStop = true, useBreakevenStop = true, useTimeBasedExit = true)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // DYNAMIC RISK ASSESSMENT SYSTEM
@@ -2569,8 +2464,7 @@ updateRiskMetrics() =>
     
     // Update daily P&L
     if strategy.closedtrades > strategy.closedtrades[1]
-        lastTradePnL = strategy.closedtrades.exit_price(strategy.closedtrades - 1) - 
-                      strategy.closedtrades.entry_price(strategy.closedtrades - 1)
+        lastTradePnL = strategy.closedtrades.exit_price(strategy.closedtrades - 1) - strategy.closedtrades.entry_price(strategy.closedtrades - 1)
         dailyPnL += lastTradePnL
         
         // Track consecutive losses
@@ -2603,15 +2497,13 @@ getAdvancedPositionSize(baseSignalStrength, marketConditions) =>
     lossAdjustment = math.max(0.1, 1.0 - (consecutiveLosses / riskConfig.maxConsecutiveLosses))
     
     // Market regime adjustment
-    regimeAdjustment = math.abs(currentTrendStrength) > 0.5 ? 1.2 : 
-                      math.abs(currentTrendStrength) < 0.2 ? 0.7 : 1.0
+    regimeAdjustment = math.abs(currentTrendStrength) > 0.5 ? 1.2 : math.abs(currentTrendStrength) < 0.2 ? 0.7 : 1.0
     
     // Zone proximity adjustment
     zoneAdjustment = zoneSignalModifier
     
     // Combined position size calculation
-    adjustedSize = baseSize * volatilityAdjustment * drawdownAdjustment * 
-                   lossAdjustment * regimeAdjustment * zoneAdjustment
+    adjustedSize = baseSize * volatilityAdjustment * drawdownAdjustment * lossAdjustment * regimeAdjustment * zoneAdjustment
     
     // Apply maximum position size limit
     finalPositionSize := math.min(adjustedSize, riskConfig.maxPositionSize)
@@ -2640,9 +2532,7 @@ getAdvancedStopLoss(entryPrice, direction, signalStrength) =>
     volatilityStop = atrStop * (1 + currentVolatility * 10)
     
     // Zone-based stop (from Phase 4)
-    zoneStop = direction == 1 ? 
-               (not na(strongestDemand) ? math.abs(entryPrice - strongestDemand.bottomPrice) : volatilityStop) :
-               (not na(strongestSupply) ? math.abs(strongestSupply.topPrice - entryPrice) : volatilityStop)
+    zoneStop = direction == 1 ? (not na(strongestDemand) ? math.abs(entryPrice - strongestDemand.bottomPrice) : volatilityStop) : (not na(strongestSupply) ? math.abs(strongestSupply.topPrice - entryPrice) : volatilityStop)
     
     // Signal strength adjustment
     strengthAdjustment = 1.0 + (signalStrength - 0.5)  // Stronger signals = tighter stops
@@ -2696,19 +2586,11 @@ getTimeBasedExit() =>
         barsInTrade = bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1)
         
         // Exit after maximum time based on timeframe
-        maxBars = timeframe.period == "1" ? 1440 :      // 24 hours for 1min
-                 timeframe.period == "5" ? 288 :        // 24 hours for 5min
-                 timeframe.period == "15" ? 96 :        // 24 hours for 15min
-                 timeframe.period == "30" ? 48 :        // 24 hours for 30min
-                 timeframe.period == "60" ? 24 :        // 24 hours for 1hour
-                 timeframe.period == "240" ? 6 :        // 24 hours for 4hour
-                 5                                      // 5 bars for daily+
+        maxBars = timeframe.period == "1" ? 1440 : timeframe.period == "5" ? 288 : timeframe.period == "15" ? 96 : timeframe.period == "30" ? 48 : timeframe.period == "60" ? 24 : timeframe.period == "240" ? 6 : 5
         
         // Exit if holding too long without significant profit
         if barsInTrade > maxBars
-            currentProfit = strategy.position_size > 0 ? 
-                           (close - strategy.position_avg_price) / strategy.position_avg_price :
-                           (strategy.position_avg_price - close) / strategy.position_avg_price
+            currentProfit = strategy.position_size > 0 ? (close - strategy.position_avg_price) / strategy.position_avg_price : (strategy.position_avg_price - close) / strategy.position_avg_price
             
             if currentProfit < 0.01  // Less than 1% profit
                 shouldExit := true
@@ -2754,16 +2636,10 @@ finalSignalStrength = math.abs(finalEnhancedSignal)
 advancedPositionSize = getAdvancedPositionSize(finalSignalStrength, currentTrendStrength)
 
 // Enhanced buy signal with risk management
-riskManagedBuySignal = buySignal and riskAllowsTrading and 
-                      currentDrawdown < riskConfig.maxDrawdownLimit * 0.9 and
-                      consecutiveLosses < riskConfig.maxConsecutiveLosses and
-                      not na(strongestSupply) ? close < strongestSupply.bottomPrice * 0.98 : true
+riskManagedBuySignal = buySignal and riskAllowsTrading and currentDrawdown < riskConfig.maxDrawdownLimit * 0.9 and consecutiveLosses < riskConfig.maxConsecutiveLosses and (not na(strongestSupply) ? close < strongestSupply.bottomPrice * 0.98 : true)
 
 // Enhanced sell signal with risk management
-riskManagedSellSignal = sellSignal and riskAllowsTrading and 
-                       currentDrawdown < riskConfig.maxDrawdownLimit * 0.9 and
-                       consecutiveLosses < riskConfig.maxConsecutiveLosses and
-                       not na(strongestDemand) ? close > strongestDemand.topPrice * 1.02 : true
+riskManagedSellSignal = sellSignal and riskAllowsTrading and currentDrawdown < riskConfig.maxDrawdownLimit * 0.9 and consecutiveLosses < riskConfig.maxConsecutiveLosses and (not na(strongestDemand) ? close > strongestDemand.topPrice * 1.02 : true)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // FINAL STRATEGY EXECUTION
@@ -2838,10 +2714,7 @@ if barstate.islast and showTables
         table.delete(riskTable)
     
     // Create risk management table
-    riskTable := table.new(position.middle_right, 3, 12, 
-                           bgcolor=color.new(color.black, 85), 
-                           border_width=2, 
-                           border_color=color.new(color.gray, 60))
+    riskTable := table.new(position.middle_right, 3, 12, bgcolor=color.new(color.black, 85), border_width=2, border_color=color.new(color.gray, 60))
     
     // Header row
     table.cell(riskTable, 0, 0, "RISK MGMT", bgcolor=color.new(color.orange, 70), text_color=color.white, text_size=size.normal)
@@ -2850,36 +2723,29 @@ if barstate.islast and showTables
     
     // Current drawdown
     table.cell(riskTable, 0, 1, "Drawdown", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    drawdownColor = currentDrawdown > riskConfig.maxDrawdownLimit * 0.8 ? color.new(color.red, 80) : 
-                   currentDrawdown > riskConfig.maxDrawdownLimit * 0.5 ? color.new(color.yellow, 80) : color.new(color.green, 80)
+    drawdownColor = currentDrawdown > riskConfig.maxDrawdownLimit * 0.8 ? color.new(color.red, 80) : currentDrawdown > riskConfig.maxDrawdownLimit * 0.5 ? color.new(color.yellow, 80) : color.new(color.green, 80)
     table.cell(riskTable, 1, 1, str.tostring(math.round(currentDrawdown, 2)) + "%", bgcolor=drawdownColor, text_color=color.white, text_size=size.small)
-    drawdownStatus = currentDrawdown > riskConfig.maxDrawdownLimit * 0.8 ? "HIGH" : 
-                    currentDrawdown > riskConfig.maxDrawdownLimit * 0.5 ? "MEDIUM" : "SAFE"
+    drawdownStatus = currentDrawdown > riskConfig.maxDrawdownLimit * 0.8 ? "HIGH" : currentDrawdown > riskConfig.maxDrawdownLimit * 0.5 ? "MEDIUM" : "SAFE"
     table.cell(riskTable, 2, 1, drawdownStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Daily P&L
     table.cell(riskTable, 0, 2, "Daily P&L", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    pnlColor = math.abs(dailyPnL) > riskConfig.maxDailyLoss * 0.8 ? color.new(color.red, 80) : 
-              dailyPnL > 0 ? color.new(color.green, 80) : color.new(color.gray, 80)
+    pnlColor = math.abs(dailyPnL) > riskConfig.maxDailyLoss * 0.8 ? color.new(color.red, 80) : dailyPnL > 0 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(riskTable, 1, 2, str.tostring(math.round(dailyPnL, 2)) + "%", bgcolor=pnlColor, text_color=color.white, text_size=size.small)
-    pnlStatus = math.abs(dailyPnL) > riskConfig.maxDailyLoss * 0.8 ? "LIMIT" : 
-               dailyPnL > riskConfig.maxDailyLoss * 0.5 ? "GOOD" : "NORMAL"
+    pnlStatus = math.abs(dailyPnL) > riskConfig.maxDailyLoss * 0.8 ? "LIMIT" : dailyPnL > riskConfig.maxDailyLoss * 0.5 ? "GOOD" : "NORMAL"
     table.cell(riskTable, 2, 2, pnlStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Consecutive losses
     table.cell(riskTable, 0, 3, "Consec Loss", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    lossColor = consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.8 ? color.new(color.red, 80) : 
-               consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.5 ? color.new(color.yellow, 80) : color.new(color.green, 80)
+    lossColor = consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.8 ? color.new(color.red, 80) : consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.5 ? color.new(color.yellow, 80) : color.new(color.green, 80)
     table.cell(riskTable, 1, 3, str.tostring(consecutiveLosses), bgcolor=lossColor, text_color=color.white, text_size=size.small)
-    lossStatus = consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.8 ? "HIGH" : 
-                consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.5 ? "CAUTION" : "SAFE"
+    lossStatus = consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.8 ? "HIGH" : consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.5 ? "CAUTION" : "SAFE"
     table.cell(riskTable, 2, 3, lossStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Position size
     table.cell(riskTable, 0, 4, "Position Size", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(riskTable, 1, 4, str.tostring(math.round(advancedPositionSize, 2)) + "%", bgcolor=color.new(color.blue, 80), text_color=color.white, text_size=size.small)
-    sizeStatus = advancedPositionSize > riskConfig.maxPositionSize * 0.8 ? "LARGE" : 
-                advancedPositionSize > riskConfig.maxPositionSize * 0.5 ? "MEDIUM" : "SMALL"
+    sizeStatus = advancedPositionSize > riskConfig.maxPositionSize * 0.8 ? "LARGE" : advancedPositionSize > riskConfig.maxPositionSize * 0.5 ? "MEDIUM" : "SMALL"
     table.cell(riskTable, 2, 4, sizeStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Risk override status
@@ -2891,9 +2757,8 @@ if barstate.islast and showTables
     
     // Current position
     positionSize = strategy.position_size
-    table.cell(riskTable, 0, 6, "📍 Position", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    positionColor = positionSize > 0 ? color.new(color.green, 80) : 
-                   positionSize < 0 ? color.new(color.red, 80) : color.new(color.gray, 80)
+    table.cell(riskTable, 0, 6, " Position", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    positionColor = positionSize > 0 ? color.new(color.green, 80) : positionSize < 0 ? color.new(color.red, 80) : color.new(color.gray, 80)
     positionText = positionSize > 0 ? "LONG" : positionSize < 0 ? "SHORT" : "FLAT"
     table.cell(riskTable, 1, 6, positionText, bgcolor=positionColor, text_color=color.white, text_size=size.small)
     table.cell(riskTable, 2, 6, positionSize != 0 ? str.tostring(math.round(math.abs(positionSize), 2)) : "0", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
@@ -2901,40 +2766,34 @@ if barstate.islast and showTables
     // Trailing stop level
     table.cell(riskTable, 0, 7, "Trail Stop", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(riskTable, 1, 7, trailingStopLevel > 0 ? str.tostring(trailingStopLevel, "#.####") : "N/A", bgcolor=color.new(color.purple, 80), text_color=color.white, text_size=size.small)
-    trailStatus = trailingStopLevel > 0 ? "ACTIVE" : "💤 INACTIVE"
+    trailStatus = trailingStopLevel > 0 ? "ACTIVE" : " INACTIVE"
     table.cell(riskTable, 2, 7, trailStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Breakeven level
     table.cell(riskTable, 0, 8, "Breakeven", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(riskTable, 1, 8, breakEvenLevel > 0 ? str.tostring(breakEvenLevel, "#.####") : "N/A", bgcolor=color.new(color.teal, 80), text_color=color.white, text_size=size.small)
-    beStatus = breakEvenLevel > 0 ? "SET" : "💤 WAITING"
+    beStatus = breakEvenLevel > 0 ? "SET" : " WAITING"
     table.cell(riskTable, 2, 8, beStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Market volatility
     table.cell(riskTable, 0, 9, "Vol Risk", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    volRiskColor = currentVolatility > 0.03 ? color.new(color.red, 80) : 
-                  currentVolatility > 0.02 ? color.new(color.yellow, 80) : color.new(color.green, 80)
+    volRiskColor = currentVolatility > 0.03 ? color.new(color.red, 80) : currentVolatility > 0.02 ? color.new(color.yellow, 80) : color.new(color.green, 80)
     table.cell(riskTable, 1, 9, str.tostring(math.round(currentVolatility * 100, 2)) + "%", bgcolor=volRiskColor, text_color=color.white, text_size=size.small)
     volStatus = currentVolatility > 0.03 ? "HIGH" : currentVolatility > 0.02 ? "ELEVATED" : "NORMAL"
     table.cell(riskTable, 2, 9, volStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Signal strength
     table.cell(riskTable, 0, 10, "Signal Str", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    signalStrengthColor = finalSignalStrength > 0.7 ? color.new(color.green, 80) : 
-                         finalSignalStrength > 0.4 ? color.new(color.yellow, 80) : color.new(color.red, 80)
+    signalStrengthColor = finalSignalStrength > 0.7 ? color.new(color.green, 80) : finalSignalStrength > 0.4 ? color.new(color.yellow, 80) : color.new(color.red, 80)
     table.cell(riskTable, 1, 10, str.tostring(math.round(finalSignalStrength * 100, 0)) + "%", bgcolor=signalStrengthColor, text_color=color.white, text_size=size.small)
     strengthStatus = finalSignalStrength > 0.7 ? "STRONG" : finalSignalStrength > 0.4 ? "MEDIUM" : "WEAK"
     table.cell(riskTable, 2, 10, strengthStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Overall risk score
-    overallRiskScore = (1 - currentDrawdown / 100) * 0.3 + 
-                      (1 - math.abs(dailyPnL) / 10) * 0.2 + 
-                      (1 - consecutiveLosses / 10) * 0.2 + 
-                      (1 - currentVolatility * 20) * 0.3
+    overallRiskScore = (1 - currentDrawdown / 100) * 0.3 + (1 - math.abs(dailyPnL) / 10) * 0.2 + (1 - consecutiveLosses / 10) * 0.2 + (1 - currentVolatility * 20) * 0.3
     
     table.cell(riskTable, 0, 11, "Risk Score", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    riskScoreColor = overallRiskScore > 0.8 ? color.new(color.green, 60) : 
-                    overallRiskScore > 0.6 ? color.new(color.yellow, 80) : color.new(color.red, 80)
+    riskScoreColor = overallRiskScore > 0.8 ? color.new(color.green, 60) : overallRiskScore > 0.6 ? color.new(color.yellow, 80) : color.new(color.red, 80)
     table.cell(riskTable, 1, 11, str.tostring(math.round(overallRiskScore * 100, 0)) + "%", bgcolor=riskScoreColor, text_color=color.white, text_size=size.small)
     riskScoreStatus = overallRiskScore > 0.8 ? "EXCELLENT" : overallRiskScore > 0.6 ? "GOOD" : "POOR"
     table.cell(riskTable, 2, 11, riskScoreStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
@@ -2973,4 +2832,4 @@ if barstate.islast and showTables
 // • Professional visualization with enhanced user experience
 // • Advanced risk management with multiple safety mechanisms
 //
-// 💎 READY FOR LIVE TRADING WITH INSTITUTIONAL-GRADE FEATURES! 💎
+//  READY FOR LIVE TRADING WITH INSTITUTIONAL-GRADE FEATURES! 
