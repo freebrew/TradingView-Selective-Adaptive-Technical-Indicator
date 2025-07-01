@@ -250,7 +250,7 @@ signalCurrent = rsiToSignal(rsi)
 var table mtfTable = table.new(position.bottom_right, 6, 6, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
 
 // Performance Metrics Table (Left)  
-var table perfTable = table.new(position.bottom_left, 2, 8, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
+var table perfTable = table.new(position.bottom_left, 2, 12, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)  // Increased from 8 to 12 rows
 
 // Optimization Results Table (Top Right)
 var table optTable = table.new(position.top_right, 8, 8, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
