@@ -17,88 +17,88 @@ import jdehorty/MLExtensions/2 as ml
 import jdehorty/KernelFunctions/2 as kernels
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎛️ FOUR DROPDOWN INPUT ARCHITECTURE
+// FOUR DROPDOWN INPUT ARCHITECTURE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Dropdown 1: ML Kernel Selection
-kernelType = input.string("Rational Quadratic", "🧠 ML Kernel", 
+kernelType = input.string("Rational Quadratic", title="ML Kernel",
     options=["Rational Quadratic", "Gaussian", "Periodic", "Locally Periodic"],
-    group="🎯 Core Settings")
+    group="Core Settings")
 
 // Dropdown 2: Market Structure Mode
-structureMode = input.string("Supply/Demand", "🏗️ Market Structure", 
+structureMode = input.string("Supply/Demand", title="Market Structure",
     options=["Supply/Demand", "Support/Resistance", "Breakout/Reversal"],
-    group="🎯 Core Settings")
+    group="Core Settings")
 
 // Dropdown 3: Signal Processing
-signalProcessing = input.string("Zero-Lag", "⚡ Signal Processing", 
+signalProcessing = input.string("Zero-Lag", title="Signal Processing",
     options=["Zero-Lag", "Adaptive T3", "Standard", "Hybrid"],
-    group="🎯 Core Settings")
+    group="Core Settings")
 
 // Dropdown 4: Optimization Mode
-optimizationMode = input.string("Auto-Backtest", "🔧 Optimization", 
+optimizationMode = input.string("Auto-Backtest", title="Optimization",
     options=["Manual", "Auto-Backtest", "Real-time Adaptive", "Performance Analysis"],
-    group="🎯 Core Settings")
+    group="Core Settings")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 LORENTZIAN CLASSIFICATION SETTINGS
+// LORENTZIAN CLASSIFICATION SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-neighborsCount = input.int(8, "🎯 Neighbors Count", minval=1, maxval=100, group="🧠 ML Settings")
-maxBarsBack = input.int(2000, "📈 Max Bars Back", minval=1, maxval=5000, group="🧠 ML Settings")
-featureCount = input.int(5, "🔢 Feature Count", minval=2, maxval=5, group="🧠 ML Settings")
-colorCompression = input.int(1, "🎨 Color Compression", minval=1, maxval=10, group="🧠 ML Settings")
-showExits = input.bool(false, "🚪 Show Exits", group="🧠 ML Settings")
-useDynamicExits = input.bool(false, "🔄 Dynamic Exits", group="🧠 ML Settings")
+neighborsCount = input.int(8, title="Neighbors Count", minval=1, maxval=100, group="ML Settings")
+maxBarsBack = input.int(2000, title="Max Bars Back", minval=1, maxval=5000, group="ML Settings")
+featureCount = input.int(5, title="Feature Count", minval=2, maxval=5, group="ML Settings")
+colorCompression = input.int(1, title="Color Compression", minval=1, maxval=10, group="ML Settings")
+showExits = input.bool(false, title="Show Exits", group="ML Settings")
+useDynamicExits = input.bool(false, title="Dynamic Exits", group="ML Settings")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 FEATURE ENGINEERING SETTINGS
+// FEATURE ENGINEERING SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-rsiLength = input.int(14, "RSI Length", minval=2, group="📊 Features")
-wtLength = input.int(10, "WT Length", minval=2, group="📊 Features")
-adxLength = input.int(20, "ADX Length", minval=2, group="📊 Features")
-cciLength = input.int(20, "CCI Length", minval=2, group="📊 Features")
+rsiLength = input.int(14, title="RSI Length", minval=2, group="Features")
+wtLength = input.int(10, title="WT Length", minval=2, group="Features")
+adxLength = input.int(20, title="ADX Length", minval=2, group="Features")
+cciLength = input.int(20, title="CCI Length", minval=2, group="Features")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🏗️ SUPPLY/DEMAND ZONE SETTINGS
+// SUPPLY/DEMAND ZONE SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-zoneLookback = input.int(20, "🔍 Zone Lookback", minval=5, maxval=100, group="🏗️ Zones")
-zoneStrength = input.float(0.1, "💪 Zone Strength", minval=0.01, maxval=1.0, step=0.01, group="🏗️ Zones")
-showZones = input.bool(true, "👁️ Show Zones", group="🏗️ Zones")
-maxZones = input.int(10, "📊 Max Zones", minval=1, maxval=50, group="🏗️ Zones")
+zoneLookback = input.int(20, "Zone Lookback", minval=5, maxval=100, group="Zones")
+zoneStrength = input.float(0.1, "Zone Strength", minval=0.01, maxval=1.0, step=0.01, group="Zones")
+showZones = input.bool(true, "Show Zones", group="Zones")
+maxZones = input.int(10, "Max Zones", minval=1, maxval=50, group="Zones")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// ⚡ ZERO-LAG SETTINGS
+// ZERO-LAG SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-zeroLagLength = input.int(14, "⚡ Zero-Lag Length", minval=2, group="⚡ Zero-Lag")
-adaptiveT3Length = input.int(5, "🔄 Adaptive T3 Length", minval=2, group="⚡ Zero-Lag")
-t3Factor = input.float(0.7, "🎛️ T3 Factor", minval=0.1, maxval=1.0, step=0.1, group="⚡ Zero-Lag")
+zeroLagLength = input.int(14, "Zero-Lag Length", minval=2, group="Zero-Lag")
+adaptiveT3Length = input.int(5, "Adaptive T3 Length", minval=2, group="Zero-Lag")
+t3Factor = input.float(0.7, "T3 Factor", minval=0.1, maxval=1.0, step=0.1, group="Zero-Lag")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔧 AUTO-BACKTESTING SETTINGS
+// AUTO-BACKTESTING SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-enableOptimization = input.bool(true, "🔧 Enable Optimization", group="🔧 Optimization")
-optimizationRuns = input.int(100, "🏃 Optimization Runs", minval=10, maxval=1000, group="🔧 Optimization")
-showOptTable = input.bool(true, "📊 Show Optimization Table", group="🔧 Optimization")
-tableSize = input.string("small", "📏 Table Size", options=["tiny", "small", "normal", "large"], group="🔧 Optimization")
+enableOptimization = input.bool(true, "Enable Optimization", group="Optimization")
+optimizationRuns = input.int(100, "Optimization Runs", minval=10, maxval=1000, group="Optimization")
+showOptTable = input.bool(true, "Show Optimization Table", group="Optimization")
+tableSize = input.string("small", "Table Size", options=["tiny", "small", "normal", "large"], group="Optimization")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 💰 RISK MANAGEMENT SETTINGS
+// RISK MANAGEMENT SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-stopLossPercent = input.float(2.0, "🛑 Stop Loss %", minval=0.1, maxval=10.0, step=0.1, group="💰 Risk Management")
-takeProfitPercent = input.float(4.0, "🎯 Take Profit %", minval=0.1, maxval=20.0, step=0.1, group="💰 Risk Management")
-trailingStopPercent = input.float(1.0, "📈 Trailing Stop %", minval=0.1, maxval=5.0, step=0.1, group="💰 Risk Management")
-maxDailyLoss = input.float(5.0, "📉 Max Daily Loss %", minval=1.0, maxval=20.0, step=0.5, group="💰 Risk Management")
-riskPerTrade = input.float(1.0, "⚖️ Risk Per Trade %", minval=0.1, maxval=5.0, step=0.1, group="💰 Risk Management")
+stopLossPercent = input.float(2.0, "Stop Loss %", minval=0.1, maxval=10.0, step=0.1, group="Risk Management")
+takeProfitPercent = input.float(4.0, "Take Profit %", minval=0.1, maxval=20.0, step=0.1, group="Risk Management")
+trailingStopPercent = input.float(1.0, "Trailing Stop %", minval=0.1, maxval=5.0, step=0.1, group="Risk Management")
+maxDailyLoss = input.float(5.0, "Max Daily Loss %", minval=1.0, maxval=20.0, step=0.5, group="Risk Management")
+riskPerTrade = input.float(1.0, "Risk Per Trade %", minval=0.1, maxval=5.0, step=0.1, group="Risk Management")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎨 DISPLAY SETTINGS
+// DISPLAY SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-showSignals = input.bool(true, "🎯 Show Signals", group="🎨 Display")
-showTables = input.bool(true, "📊 Show Tables", group="🎨 Display")
-showPerformance = input.bool(true, "📈 Show Performance", group="🎨 Display")
+showSignals = input.bool(true, "Show Signals", group="Display")
+showTables = input.bool(true, "Show Tables", group="Display")
+showPerformance = input.bool(true, "Show Performance", group="Display")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔧 UTILITY FUNCTIONS
+// UTILITY FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Signal Translation Function
@@ -128,7 +128,7 @@ tanhTransform(src) =>
     math.tanh(src)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 FEATURE ENGINEERING
+// FEATURE ENGINEERING
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // RSI Feature
@@ -156,7 +156,7 @@ adxFeature = ml.n_adx(high, low, close, adxLength)
 volumeFeature = normalize(volume, 20)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🧠 KERNEL FUNCTIONS INTEGRATION
+// KERNEL FUNCTIONS INTEGRATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Get kernel function based on selection
@@ -172,7 +172,7 @@ getKernel(src, lookback) =>
 kernelSmoothed = getKernel(close, 20)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 MULTI-TIMEFRAME ANALYSIS
+// MULTI-TIMEFRAME ANALYSIS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Get signals from different timeframes
@@ -198,7 +198,7 @@ signal4h = rsiToSignal(tf4h)
 signalCurrent = rsiToSignal(rsi)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 TABLE INITIALIZATION
+// TABLE INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Multi-Timeframe Signals Table (Right)
@@ -220,7 +220,7 @@ var table optTable = table.new(position.top_right, 8, 8,
     border_color=color.gray)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 BASIC SIGNAL GENERATION (Phase 1 Implementation)
+// BASIC SIGNAL GENERATION (Phase 1 Implementation)
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Simple signal combination for Phase 1
@@ -228,7 +228,7 @@ buySignal = signalCurrent == 1 and signal5m >= 0 and signal30m >= 0
 sellSignal = signalCurrent == -1 and signal5m <= 0 and signal30m <= 0
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 TABLE UPDATES WITH WHITE TEXT
+// TABLE UPDATES WITH WHITE TEXT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 if barstate.islast and showTables
@@ -274,7 +274,7 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 7, str.tostring(featureCount), bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 SIGNAL VISUALIZATION
+// SIGNAL VISUALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Plot buy/sell signals
@@ -284,7 +284,7 @@ plotshape(sellSignal and showSignals, title="Sell Signal", location=location.abo
           style=shape.triangledown, size=size.small, color=color.red)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 💰 BASIC STRATEGY EXECUTION (Phase 1)
+// BASIC STRATEGY EXECUTION (Phase 1)
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate position size based on risk
@@ -307,28 +307,28 @@ if sellSignal and strategy.position_size == 0
                   limit=close * (1 - takeProfitPercent / 100))
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 PHASE 1 COMPLETE - FOUNDATION ESTABLISHED
+// PHASE 1 COMPLETE - FOUNDATION ESTABLISHED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // This completes Phase 1: Pine Script v6 Foundation & Library Integration
 // Features implemented:
-// ✅ Pine Script v6 compliance with modern syntax
-// ✅ Two library imports (MLExtensions/2 and KernelFunctions/2)
-// ✅ Four dropdown architecture
-// ✅ Basic feature engineering with ML normalization
-// ✅ Kernel function integration
-// ✅ Multi-timeframe analysis framework  
-// ✅ White text tables for legibility
-// ✅ Buy/Hold/Sell signal translation
-// ✅ Basic signal generation and visualization
-// ✅ Risk management foundation
+// Pine Script v6 compliance with modern syntax
+// Two library imports (MLExtensions/2 and KernelFunctions/2)
+// Four dropdown architecture
+// Basic feature engineering with ML normalization
+// Kernel function integration
+// Multi-timeframe analysis framework  
+// White text tables for legibility
+// Buy/Hold/Sell signal translation
+// Basic signal generation and visualization
+// Risk management foundation
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🧠 PHASE 2: ENHANCED LORENTZIAN CLASSIFICATION & ML CORE
+// PHASE 2: ENHANCED LORENTZIAN CLASSIFICATION & ML CORE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔢 ADVANCED FEATURE VECTOR SYSTEM
+// ADVANCED FEATURE VECTOR SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Enhanced feature engineering with dynamic selection
@@ -428,7 +428,7 @@ calculateFeatureWeights() =>
     weights
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 K-NEAREST NEIGHBORS IMPLEMENTATION
+// K-NEAREST NEIGHBORS IMPLEMENTATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Neighbor structure
@@ -524,7 +524,7 @@ makePrediction(neighbors) =>
     [signal, confidence]
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 DYNAMIC NEIGHBOR COUNT OPTIMIZATION
+// DYNAMIC NEIGHBOR COUNT OPTIMIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Optimize neighbor count based on market conditions
@@ -552,7 +552,7 @@ getOptimalNeighborCount() =>
     math.max(3, math.min(adjustedCount, 20))  // Keep within reasonable bounds
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🧠 MAIN LORENTZIAN CLASSIFICATION ENGINE
+// MAIN LORENTZIAN CLASSIFICATION ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Main LC prediction function
@@ -571,7 +571,7 @@ if bar_index > maxBarsBack / 10  // Ensure enough historical data
     lcSignal := pred
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 KERNEL-ENHANCED PREDICTIONS
+// KERNEL-ENHANCED PREDICTIONS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Apply kernel smoothing to predictions for stability
@@ -594,7 +594,7 @@ smoothedSignal = smoothedPrediction > 0.2 ? 1 :
                 smoothedPrediction < -0.2 ? -1 : 0
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 ADAPTIVE THRESHOLD SYSTEM
+// ADAPTIVE THRESHOLD SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Dynamic threshold based on market volatility
@@ -622,7 +622,7 @@ adaptiveSignal = smoothedPrediction > adaptiveThreshold ? 1 :
                 smoothedPrediction < -adaptiveThreshold ? -1 : 0
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 SIGNAL COMBINATION AND CONSENSUS
+// SIGNAL COMBINATION AND CONSENSUS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Combine different signal sources with weighting
@@ -650,7 +650,7 @@ getCombinedSignal() =>
 combinedSignal = getCombinedSignal()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 CONFIDENCE-BASED SIGNAL FILTERING
+// CONFIDENCE-BASED SIGNAL FILTERING
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Only trade when confidence is high enough
@@ -672,7 +672,7 @@ getSignalStrength() =>
 signalStrength = getSignalStrength()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 DYNAMIC EXIT SYSTEM
+// DYNAMIC EXIT SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Enhanced exit logic based on LC confidence
@@ -690,7 +690,7 @@ shouldExit() =>
         confidenceDropped or predictionReversed
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ENHANCED SIGNAL GENERATION (Replacing Phase 1 basic signals)
+// ENHANCED SIGNAL GENERATION (Replacing Phase 1 basic signals)
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Enhanced buy/sell signals using LC predictions
@@ -702,7 +702,7 @@ buySignal := lcBuySignal
 sellSignal := lcSellSignal
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ENHANCED TABLE UPDATES WITH LC METRICS
+// ENHANCED TABLE UPDATES WITH LC METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 if barstate.islast and showTables
@@ -721,28 +721,28 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 11, signalToText(combinedSignal), bgcolor=signalColor(combinedSignal), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 PHASE 2 COMPLETE - ENHANCED LC & ML CORE ESTABLISHED
+// PHASE 2 COMPLETE - ENHANCED LC & ML CORE ESTABLISHED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Phase 2 Features Implemented:
-// ✅ Advanced feature vector system with dynamic selection
-// ✅ Enhanced Lorentzian distance calculation with weighting
-// ✅ K-nearest neighbors with confidence scoring
-// ✅ Prediction engine with multiple weighting schemes
-// ✅ Dynamic neighbor count optimization
-// ✅ Kernel-enhanced predictions for stability
-// ✅ Adaptive threshold system based on volatility
-// ✅ Signal combination and consensus mechanism
-// ✅ Confidence-based signal filtering
-// ✅ Dynamic exit system with LC integration
-// ✅ Enhanced table updates with LC metrics
+// Advanced feature vector system with dynamic selection
+// Enhanced Lorentzian distance calculation with weighting
+// K-nearest neighbors with confidence scoring
+// Prediction engine with multiple weighting schemes
+// Dynamic neighbor count optimization
+// Kernel-enhanced predictions for stability
+// Adaptive threshold system based on volatility
+// Signal combination and consensus mechanism
+// Confidence-based signal filtering
+// Dynamic exit system with LC integration
+// Enhanced table updates with LC metrics
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 PHASE 3: AUTO-BACKTESTING & OPTIMIZATION ENGINE
+// PHASE 3: AUTO-BACKTESTING & OPTIMIZATION ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 PERFORMANCE TRACKING SYSTEM
+// PERFORMANCE TRACKING SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Enhanced performance metrics tracking
@@ -779,7 +779,7 @@ if bar_index == 0
     highWaterMark := strategy.equity
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 REAL-TIME PERFORMANCE CALCULATION
+// REAL-TIME PERFORMANCE CALCULATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate performance metrics in real-time
@@ -850,7 +850,7 @@ updatePerformanceMetrics() =>
 updatePerformanceMetrics()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📈 TRADE ANALYSIS SYSTEM
+// TRADE ANALYSIS SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Track individual trade performance
@@ -904,7 +904,7 @@ if strategy.position_size != strategy.position_size[1]
                 currentMetrics.profitFactor := totalWins / totalLosses
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔧 PARAMETER OPTIMIZATION SYSTEM
+// PARAMETER OPTIMIZATION SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Optimization parameter sets
@@ -954,7 +954,7 @@ getOptimizationSets() =>
     sets
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 OPTIMIZATION SCORING SYSTEM
+// OPTIMIZATION SCORING SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Multi-objective optimization scoring
@@ -981,7 +981,7 @@ calculateOptimizationScore(metrics) =>
 currentOptimizationScore = calculateOptimizationScore(currentMetrics)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 DYNAMIC PARAMETER ADJUSTMENT
+// DYNAMIC PARAMETER ADJUSTMENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Adaptive parameter adjustment based on market conditions
@@ -1039,7 +1039,7 @@ finalStopLoss = optimizationMode == "Auto-Adaptive" ? dynamicStopLoss : stopLoss
 finalTakeProfit = optimizationMode == "Auto-Adaptive" ? dynamicTakeProfit : takeProfitPercent
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 PERFORMANCE COMPARISON SYSTEM
+// PERFORMANCE COMPARISON SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Benchmark comparison (Buy & Hold)
@@ -1057,7 +1057,7 @@ outperformance = currentMetrics.totalReturn - buyHoldReturn
 informationRatio = currentMetrics.volatility > 0 ? outperformance / currentMetrics.volatility : 0
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 RISK MANAGEMENT OPTIMIZATION
+// RISK MANAGEMENT OPTIMIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Dynamic position sizing based on recent performance
@@ -1111,7 +1111,7 @@ optimalPositionSize = optimizationMode == "Kelly Criterion" ? getKellyPositionSi
                      finalRisk
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 ENHANCED STRATEGY EXECUTION WITH OPTIMIZATION
+// ENHANCED STRATEGY EXECUTION WITH OPTIMIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate optimized position size
@@ -1148,7 +1148,7 @@ if shouldExit() and optimizationMode == "Dynamic Risk"
         strategy.close("Short")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ENHANCED PERFORMANCE TABLE WITH OPTIMIZATION METRICS
+// ENHANCED PERFORMANCE TABLE WITH OPTIMIZATION METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 if barstate.islast and showTables
@@ -1179,29 +1179,29 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 19, str.tostring(math.round(optimalPositionSize, 1)) + "%", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 PHASE 3 COMPLETE - AUTO-BACKTESTING & OPTIMIZATION ENGINE ESTABLISHED
+// PHASE 3 COMPLETE - AUTO-BACKTESTING & OPTIMIZATION ENGINE ESTABLISHED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Phase 3 Features Implemented:
-// ✅ Comprehensive performance tracking system
-// ✅ Real-time performance calculation with advanced metrics
-// ✅ Individual trade analysis and tracking
-// ✅ Multi-parameter optimization system
-// ✅ Dynamic scoring and ranking system
-// ✅ Adaptive parameter adjustment based on market conditions
-// ✅ Performance comparison vs benchmarks
-// ✅ Risk management optimization (Kelly Criterion, Dynamic Risk)
-// ✅ Enhanced strategy execution with optimization
-// ✅ Comprehensive performance reporting in tables
+// Comprehensive performance tracking system
+// Real-time performance calculation with advanced metrics
+// Individual trade analysis and tracking
+// Multi-parameter optimization system
+// Dynamic scoring and ranking system
+// Adaptive parameter adjustment based on market conditions
+// Performance comparison vs benchmarks
+// Risk management optimization (Kelly Criterion, Dynamic Risk)
+// Enhanced strategy execution with optimization
+// Comprehensive performance reporting in tables
 
 // Ready for Phase 4: Dynamic Supply & Demand Zones Integration
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🏗️ PHASE 4: DYNAMIC SUPPLY & DEMAND ZONES
+// PHASE 4: DYNAMIC SUPPLY & DEMAND ZONES
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 SUPPLY & DEMAND ZONE STRUCTURE
+// SUPPLY & DEMAND ZONE STRUCTURE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Zone structure for tracking supply/demand levels
@@ -1225,7 +1225,7 @@ var SupplyDemandZone[] demandZones = array.new<SupplyDemandZone>()
 var int maxZones = 20  // Maximum zones to track
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔍 PIVOT POINT DETECTION SYSTEM
+// PIVOT POINT DETECTION SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Enhanced pivot detection with volume confirmation
@@ -1280,7 +1280,7 @@ getPivotLow(lookback, volumeThreshold) =>
         isPivot and volumeConfirmed
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ZONE CREATION AND VALIDATION
+// ZONE CREATION AND VALIDATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate zone strength based on multiple factors
@@ -1355,7 +1355,7 @@ createDemandZone(pivotIndex) =>
             array.shift(demandZones)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 ZONE DETECTION AND MANAGEMENT
+// ZONE DETECTION AND MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Detect new zones
@@ -1371,7 +1371,7 @@ if getPivotLow(pivotLookback, volumeThreshold)
     createDemandZone(pivotLookback)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ZONE TESTING AND VALIDATION
+// ZONE TESTING AND VALIDATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Test if price is interacting with a zone
@@ -1459,7 +1459,7 @@ updateZones() =>
 updateZones()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ZONE ANALYSIS AND SCORING
+// ZONE ANALYSIS AND SCORING
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Find strongest active zones
@@ -1492,7 +1492,7 @@ strongestSupply = getStrongestSupplyZone()
 strongestDemand = getStrongestDemandZone()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ZONE-BASED SIGNAL ENHANCEMENT
+// ZONE-BASED SIGNAL ENHANCEMENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate zone-based signal modifiers
@@ -1523,7 +1523,7 @@ getZoneSignalModifier() =>
 zoneSignalModifier = getZoneSignalModifier()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 ZONE-ENHANCED ENTRY CONDITIONS
+// ZONE-ENHANCED ENTRY CONDITIONS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Zone-based entry enhancement
@@ -1559,7 +1559,7 @@ getZoneEnhancedSignal(baseSignal) =>
 zoneEnhancedSignal = getZoneEnhancedSignal(combinedSignal)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ZONE-BASED STOP LOSS AND TAKE PROFIT
+// ZONE-BASED STOP LOSS AND TAKE PROFIT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Dynamic stop loss based on zones
@@ -1627,7 +1627,7 @@ getZoneBasedTakeProfit(entryPrice, direction) =>
     takeProfit
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ZONE VISUALIZATION AND TABLE UPDATES
+// ZONE VISUALIZATION AND TABLE UPDATES
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Zone information for display
@@ -1664,7 +1664,7 @@ getZoneInfo() =>
 [activeSupply, activeDemand, avgSupplyStr, avgDemandStr] = getZoneInfo()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 ENHANCED SIGNAL INTEGRATION WITH ZONES
+// ENHANCED SIGNAL INTEGRATION WITH ZONES
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Final zone-enhanced buy/sell signals
@@ -1681,7 +1681,7 @@ buySignal := zoneEnhancedBuySignal
 sellSignal := zoneEnhancedSellSignal
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ENHANCED PERFORMANCE TABLE WITH ZONE METRICS
+// ENHANCED PERFORMANCE TABLE WITH ZONE METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 if barstate.islast and showTables
@@ -1704,28 +1704,28 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 24, str.tostring(math.round(zoneSignalModifier, 2)) + "x", bgcolor=modifierColor, text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 PHASE 4 COMPLETE - DYNAMIC SUPPLY & DEMAND ZONES ESTABLISHED
+// PHASE 4 COMPLETE - DYNAMIC SUPPLY & DEMAND ZONES ESTABLISHED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Phase 4 Features Implemented:
-// ✅ Comprehensive supply & demand zone structure
-// ✅ Enhanced pivot point detection with volume confirmation
-// ✅ Dynamic zone creation and validation system
-// ✅ Zone strength calculation based on multiple factors
-// ✅ Zone testing and interaction analysis
-// ✅ Zone-based signal enhancement and filtering
-// ✅ Dynamic stop loss and take profit based on zones
-// ✅ Zone visualization and performance integration
-// ✅ Real-time zone management and updates
+// Comprehensive supply & demand zone structure
+// Enhanced pivot point detection with volume confirmation
+// Dynamic zone creation and validation system
+// Zone strength calculation based on multiple factors
+// Zone testing and interaction analysis
+// Zone-based signal enhancement and filtering
+// Dynamic stop loss and take profit based on zones
+// Zone visualization and performance integration
+// Real-time zone management and updates
 
 // Ready for Phase 5: Zero-Lag Adaptive Technical Analysis Integration
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🚀 PHASE 5: ZERO-LAG ADAPTIVE TECHNICAL ANALYSIS
+// PHASE 5: ZERO-LAG ADAPTIVE TECHNICAL ANALYSIS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ZERO-LAG INDICATOR FOUNDATION
+// ZERO-LAG INDICATOR FOUNDATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Zero-Lag EMA calculation with error correction
@@ -1767,7 +1767,7 @@ adaptiveZeroLagRSI(src, length, adaptiveFactor) =>
     zeroLagRSI
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ADAPTIVE TREND DETECTION SYSTEM
+// ADAPTIVE TREND DETECTION SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Adaptive trend strength calculation
@@ -1805,7 +1805,7 @@ getAdaptivePeriod(basePeriod, trendStrength, volatility) =>
     math.round(math.max(5, math.min(adjustedPeriod, basePeriod * 2)))
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📈 ZERO-LAG ADAPTIVE INDICATORS
+// ZERO-LAG ADAPTIVE INDICATORS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate current market conditions
@@ -1824,7 +1824,7 @@ zlRSI = adaptiveZeroLagRSI(close, adaptiveRSIPeriod, 0.8)
 zlTrend = zeroLagEMA(close, adaptiveFastPeriod)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ADAPTIVE OSCILLATOR SYSTEM
+// ADAPTIVE OSCILLATOR SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Adaptive Stochastic with zero-lag smoothing
@@ -1867,7 +1867,7 @@ adaptiveCCI(length, adaptiveFactor) =>
 zlCCI = adaptiveCCI(20, 0.6)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 ADAPTIVE SIGNAL GENERATION
+// ADAPTIVE SIGNAL GENERATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Zero-lag trend signals
@@ -1929,7 +1929,7 @@ zlTrendSignal = getZeroLagTrendSignal()
 zlOscillatorSignal = getOscillatorSignal()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ADAPTIVE SIGNAL WEIGHTING SYSTEM
+// ADAPTIVE SIGNAL WEIGHTING SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Dynamic signal weighting based on market conditions
@@ -1976,7 +1976,7 @@ getAdaptiveZeroLagSignal() =>
 adaptiveZLSignal = getAdaptiveZeroLagSignal()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 ZERO-LAG SIGNAL INTEGRATION
+// ZERO-LAG SIGNAL INTEGRATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Integrate zero-lag signals with existing system
@@ -2006,7 +2006,7 @@ getEnhancedCombinedSignal() =>
 finalEnhancedSignal = getEnhancedCombinedSignal()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ZERO-LAG PERFORMANCE METRICS
+// ZERO-LAG PERFORMANCE METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Track zero-lag signal performance
@@ -2028,7 +2028,7 @@ if zlTotalSignals > 0
     zlSignalAccuracy := zlCorrectSignals / zlTotalSignals
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ADAPTIVE EXIT SYSTEM
+// ADAPTIVE EXIT SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Zero-lag based exit signals
@@ -2054,7 +2054,7 @@ getZeroLagExitSignal(currentPosition) =>
     shouldExit
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 FINAL SIGNAL INTEGRATION WITH ZERO-LAG ENHANCEMENT
+// FINAL SIGNAL INTEGRATION WITH ZERO-LAG ENHANCEMENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Update main buy/sell signals with zero-lag enhancement
@@ -2069,7 +2069,7 @@ buySignal := zlEnhancedBuySignal
 sellSignal := zlEnhancedSellSignal
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ENHANCED PERFORMANCE TABLE WITH ZERO-LAG METRICS
+// ENHANCED PERFORMANCE TABLE WITH ZERO-LAG METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 if barstate.islast and showTables
@@ -2099,29 +2099,29 @@ if barstate.islast and showTables
     table.cell(perfTable, 1, 29, str.tostring(math.round(currentVolatility * 100, 2)) + "%", bgcolor=volColor, text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 PHASE 5 COMPLETE - ZERO-LAG ADAPTIVE TECHNICAL ANALYSIS ESTABLISHED
+// PHASE 5 COMPLETE - ZERO-LAG ADAPTIVE TECHNICAL ANALYSIS ESTABLISHED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Phase 5 Features Implemented:
-// ✅ Zero-lag EMA and MACD with error correction
-// ✅ Adaptive RSI with zero-lag smoothing
-// ✅ Dynamic trend strength calculation
-// ✅ Adaptive period adjustment based on market conditions
-// ✅ Zero-lag adaptive oscillators (Stochastic, CCI)
-// ✅ Adaptive signal weighting system
-// ✅ Zero-lag signal integration and enhancement
-// ✅ Adaptive exit system with momentum analysis
-// ✅ Performance tracking for zero-lag signals
-// ✅ Enhanced visualization with zero-lag metrics
+// Zero-lag EMA and MACD with error correction
+// Adaptive RSI with zero-lag smoothing
+// Dynamic trend strength calculation
+// Adaptive period adjustment based on market conditions
+// Zero-lag adaptive oscillators (Stochastic, CCI)
+// Adaptive signal weighting system
+// Zero-lag signal integration and enhancement
+// Adaptive exit system with momentum analysis
+// Performance tracking for zero-lag signals
+// Enhanced visualization with zero-lag metrics
 
 // Ready for Phase 6: Enhanced UI & Visualization Integration
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎨 PHASE 6: ENHANCED UI & VISUALIZATION
+// PHASE 6: ENHANCED UI & VISUALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ADVANCED TABLE MANAGEMENT SYSTEM
+// ADVANCED TABLE MANAGEMENT SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Enhanced table structure for better organization
@@ -2135,13 +2135,13 @@ type TableConfig
     string position
 
 // Create enhanced table configurations
-signalTableConfig = TableConfig.new("🎯 Multi-Timeframe Signals", 3, 6, color.new(color.black, 85), color.white, "small", "top_left")
-performanceTableConfig = TableConfig.new("📊 Performance Metrics", 2, 35, color.new(color.black, 85), color.white, "small", "top_right")
-zoneTableConfig = TableConfig.new("🏗️ Supply & Demand Analysis", 3, 8, color.new(color.black, 85), color.white, "small", "bottom_left")
-indicatorTableConfig = TableConfig.new("🚀 Zero-Lag Indicators", 3, 10, color.new(color.black, 85), color.white, "small", "bottom_right")
+signalTableConfig = TableConfig.new("Multi-Timeframe Signals", 3, 6, color.new(color.black, 85), color.white, "small", "top_left")
+performanceTableConfig = TableConfig.new("Performance Metrics", 2, 35, color.new(color.black, 85), color.white, "small", "top_right")
+zoneTableConfig = TableConfig.new("Supply & Demand Analysis", 3, 8, color.new(color.black, 85), color.white, "small", "bottom_left")
+indicatorTableConfig = TableConfig.new("Zero-Lag Indicators", 3, 10, color.new(color.black, 85), color.white, "small", "bottom_right")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎨 ENHANCED COLOR SCHEMES AND THEMES
+// ENHANCED COLOR SCHEMES AND THEMES
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Professional color palette
@@ -2186,7 +2186,7 @@ getSignalColor(signal, strength) =>
         getNeutralColor("background")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 ENHANCED SIGNAL VISUALIZATION
+// ENHANCED SIGNAL VISUALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Advanced signal shapes with dynamic sizing
@@ -2196,23 +2196,23 @@ plotSignalShape(signal, signalType, strength) =>
         
         if signal > 0
             if signalType == "main"
-                plotshape(true, title="🚀 Strong Buy", style=shape.triangleup, location=location.belowbar, 
+                plotshape(true, title="Strong Buy", style=shape.triangleup, location=location.belowbar, 
                          color=getBullishColor("strong"), size=shapeSize)
             else if signalType == "zone"
-                plotshape(true, title="🎯 Zone Buy", style=shape.circle, location=location.belowbar, 
+                plotshape(true, title="Zone Buy", style=shape.circle, location=location.belowbar, 
                          color=getBullishColor("moderate"), size=size.tiny)
             else if signalType == "zl"
-                plotshape(true, title="⚡ ZL Buy", style=shape.diamond, location=location.belowbar, 
+                plotshape(true, title="ZL Buy", style=shape.diamond, location=location.belowbar, 
                          color=getBullishColor("weak"), size=size.tiny)
         else
             if signalType == "main"
-                plotshape(true, title="🔻 Strong Sell", style=shape.triangledown, location=location.abovebar, 
+                plotshape(true, title="Strong Sell", style=shape.triangledown, location=location.abovebar, 
                          color=getBearishColor("strong"), size=shapeSize)
             else if signalType == "zone"
-                plotshape(true, title="🎯 Zone Sell", style=shape.circle, location=location.abovebar, 
+                plotshape(true, title="Zone Sell", style=shape.circle, location=location.abovebar, 
                          color=getBearishColor("moderate"), size=size.tiny)
             else if signalType == "zl"
-                plotshape(true, title="⚡ ZL Sell", style=shape.diamond, location=location.abovebar, 
+                plotshape(true, title="ZL Sell", style=shape.diamond, location=location.abovebar, 
                          color=getBearishColor("weak"), size=size.tiny)
 
 // Plot enhanced signals with different markers
@@ -2228,7 +2228,7 @@ if adaptiveZLSignal == -1 and not sellSignal
     plotSignalShape(-1, "zl", 0.5)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 DYNAMIC BACKGROUND HIGHLIGHTING
+// DYNAMIC BACKGROUND HIGHLIGHTING
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Market regime background coloring
@@ -2253,7 +2253,7 @@ getMarketRegimeColor() =>
 bgcolor(getMarketRegimeColor(), title="Market Regime")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📈 ENHANCED MULTI-TIMEFRAME SIGNALS TABLE
+// ENHANCED MULTI-TIMEFRAME SIGNALS TABLE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Create enhanced signals table with better formatting
@@ -2271,37 +2271,37 @@ if barstate.islast and showTables
                                      border_color=getNeutralColor("border"))
     
     // Header row with enhanced styling
-    table.cell(enhancedSignalsTable, 0, 0, "🎯 SIGNALS", bgcolor=color.new(color.blue, 70), text_color=color.white, text_size=size.normal)
+    table.cell(enhancedSignalsTable, 0, 0, "SIGNALS", bgcolor=color.new(color.blue, 70), text_color=color.white, text_size=size.normal)
     table.cell(enhancedSignalsTable, 1, 0, "STATUS", bgcolor=color.new(color.blue, 70), text_color=color.white, text_size=size.normal)
     table.cell(enhancedSignalsTable, 2, 0, "STRENGTH", bgcolor=color.new(color.blue, 70), text_color=color.white, text_size=size.normal)
     
     // Signal rows with enhanced visualization
-    signalText5m = signal5m == 1 ? "🟢 BUY" : signal5m == -1 ? "🔴 SELL" : "⚪ HOLD"
+    signalText5m = signal5m == 1 ? "BUY" : signal5m == -1 ? "SELL" : "HOLD"
     signalStrength5m = math.abs(signal5m) * 100
     table.cell(enhancedSignalsTable, 0, 1, "5min", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 1, 1, signalText5m, bgcolor=getSignalColor(signal5m, 0.6), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 2, 1, str.tostring(math.round(signalStrength5m, 0)) + "%", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
-    signalText30m = signal30m == 1 ? "🟢 BUY" : signal30m == -1 ? "🔴 SELL" : "⚪ HOLD"
+    signalText30m = signal30m == 1 ? "BUY" : signal30m == -1 ? "SELL" : "HOLD"
     signalStrength30m = math.abs(signal30m) * 100
     table.cell(enhancedSignalsTable, 0, 2, "30min", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 1, 2, signalText30m, bgcolor=getSignalColor(signal30m, 0.6), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 2, 2, str.tostring(math.round(signalStrength30m, 0)) + "%", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
-    signalText1h = signal1h == 1 ? "🟢 BUY" : signal1h == -1 ? "🔴 SELL" : "⚪ HOLD"
+    signalText1h = signal1h == 1 ? "BUY" : signal1h == -1 ? "SELL" : "HOLD"
     signalStrength1h = math.abs(signal1h) * 100
     table.cell(enhancedSignalsTable, 0, 3, "1hour", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 1, 3, signalText1h, bgcolor=getSignalColor(signal1h, 0.6), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 2, 3, str.tostring(math.round(signalStrength1h, 0)) + "%", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
-    signalText4h = signal4h == 1 ? "🟢 BUY" : signal4h == -1 ? "🔴 SELL" : "⚪ HOLD"
+    signalText4h = signal4h == 1 ? "BUY" : signal4h == -1 ? "SELL" : "HOLD"
     signalStrength4h = math.abs(signal4h) * 100
     table.cell(enhancedSignalsTable, 0, 4, "4hour", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 1, 4, signalText4h, bgcolor=getSignalColor(signal4h, 0.6), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 2, 4, str.tostring(math.round(signalStrength4h, 0)) + "%", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Combined signal row
-    combinedText = buySignal ? "🚀 STRONG BUY" : sellSignal ? "🔻 STRONG SELL" : "⚪ HOLD"
+    combinedText = buySignal ? "STRONG BUY" : sellSignal ? "STRONG SELL" : "HOLD"
     combinedStrength = math.abs(finalEnhancedSignal) * 100
     table.cell(enhancedSignalsTable, 0, 5, "COMBINED", bgcolor=color.new(color.purple, 70), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 1, 5, combinedText, bgcolor=getSignalColor(finalEnhancedSignal, 0.8), text_color=color.white, text_size=size.small)
@@ -2309,13 +2309,13 @@ if barstate.islast and showTables
     
     // Confidence row
     confidenceLevel = lcConfidence * 100
-    confidenceText = confidenceLevel > 70 ? "🔥 HIGH" : confidenceLevel > 50 ? "✅ GOOD" : confidenceLevel > 30 ? "⚠️ LOW" : "❌ POOR"
+    confidenceText = confidenceLevel > 70 ? "HIGH" : confidenceLevel > 50 ? "GOOD" : confidenceLevel > 30 ? "LOW" : "POOR"
     table.cell(enhancedSignalsTable, 0, 6, "CONFIDENCE", bgcolor=color.new(color.orange, 70), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 1, 6, confidenceText, bgcolor=getSignalColor(lcConfidence > 0.5 ? 1 : -1, lcConfidence), text_color=color.white, text_size=size.small)
     table.cell(enhancedSignalsTable, 2, 6, str.tostring(math.round(confidenceLevel, 1)) + "%", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🏗️ ENHANCED SUPPLY & DEMAND ZONES TABLE
+// ENHANCED SUPPLY & DEMAND ZONES TABLE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 var table enhancedZonesTable = na
@@ -2332,36 +2332,36 @@ if barstate.islast and showTables
                                    border_color=getNeutralColor("border"))
     
     // Header row
-    table.cell(enhancedZonesTable, 0, 0, "🏗️ ZONES", bgcolor=color.new(color.teal, 70), text_color=color.white, text_size=size.normal)
+    table.cell(enhancedZonesTable, 0, 0, "ZONES", bgcolor=color.new(color.teal, 70), text_color=color.white, text_size=size.normal)
     table.cell(enhancedZonesTable, 1, 0, "COUNT", bgcolor=color.new(color.teal, 70), text_color=color.white, text_size=size.normal)
     table.cell(enhancedZonesTable, 2, 0, "STRENGTH", bgcolor=color.new(color.teal, 70), text_color=color.white, text_size=size.normal)
     
     // Supply zones
-    table.cell(enhancedZonesTable, 0, 1, "🔴 Supply", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 0, 1, "Supply", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 1, 1, str.tostring(activeSupply), bgcolor=color.new(color.red, 80), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 2, 1, str.tostring(math.round(avgSupplyStr * 100, 1)) + "%", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Demand zones
-    table.cell(enhancedZonesTable, 0, 2, "🟢 Demand", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 0, 2, "Demand", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 1, 2, str.tostring(activeDemand), bgcolor=color.new(color.green, 80), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 2, 2, str.tostring(math.round(avgDemandStr * 100, 1)) + "%", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Zone modifier
-    table.cell(enhancedZonesTable, 0, 3, "⚡ Modifier", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 0, 3, "Modifier", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     modifierColor = zoneSignalModifier > 1 ? color.new(color.green, 80) : 
                    zoneSignalModifier < 1 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(enhancedZonesTable, 1, 3, str.tostring(math.round(zoneSignalModifier, 2)) + "x", bgcolor=modifierColor, text_color=color.white, text_size=size.small)
-    table.cell(enhancedZonesTable, 2, 3, zoneSignalModifier > 1.1 ? "🚀 BOOST" : zoneSignalModifier < 0.9 ? "⚠️ REDUCE" : "➡️ NEUTRAL", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 2, 3, zoneSignalModifier > 1.1 ? "BOOST" : zoneSignalModifier < 0.9 ? "REDUCE" : "NEUTRAL", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Strongest zones info
     strongestSupplyPrice = not na(strongestSupply) ? strongestSupply.bottomPrice : 0.0
     strongestDemandPrice = not na(strongestDemand) ? strongestDemand.topPrice : 0.0
     
-    table.cell(enhancedZonesTable, 0, 4, "🎯 Key Supply", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 0, 4, "Key Supply", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 1, 4, strongestSupplyPrice > 0 ? str.tostring(strongestSupplyPrice, "#.####") : "N/A", bgcolor=color.new(color.red, 80), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 2, 4, not na(strongestSupply) ? str.tostring(math.round(strongestSupply.strength * 100, 0)) + "%" : "N/A", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
-    table.cell(enhancedZonesTable, 0, 5, "🎯 Key Demand", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 0, 5, "Key Demand", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 1, 5, strongestDemandPrice > 0 ? str.tostring(strongestDemandPrice, "#.####") : "N/A", bgcolor=color.new(color.green, 80), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 2, 5, not na(strongestDemand) ? str.tostring(math.round(strongestDemand.strength * 100, 0)) + "%" : "N/A", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
@@ -2369,16 +2369,16 @@ if barstate.islast and showTables
     supplyDistance = strongestSupplyPrice > 0 ? ((strongestSupplyPrice - close) / close) * 100 : 0.0
     demandDistance = strongestDemandPrice > 0 ? ((close - strongestDemandPrice) / close) * 100 : 0.0
     
-    table.cell(enhancedZonesTable, 0, 6, "📏 Supply Dist", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 0, 6, "Supply Dist", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 1, 6, strongestSupplyPrice > 0 ? str.tostring(math.round(supplyDistance, 2)) + "%" : "N/A", bgcolor=supplyDistance < 2 ? color.new(color.red, 60) : getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    table.cell(enhancedZonesTable, 2, 6, supplyDistance < 1 ? "🔥 CLOSE" : supplyDistance < 3 ? "⚠️ NEAR" : "➡️ FAR", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 2, 6, supplyDistance < 1 ? "CLOSE" : supplyDistance < 3 ? "NEAR" : "FAR", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
-    table.cell(enhancedZonesTable, 0, 7, "📏 Demand Dist", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 0, 7, "Demand Dist", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedZonesTable, 1, 7, strongestDemandPrice > 0 ? str.tostring(math.round(demandDistance, 2)) + "%" : "N/A", bgcolor=demandDistance < 2 ? color.new(color.green, 60) : getNeutralColor("background"), text_color=color.white, text_size=size.small)
-    table.cell(enhancedZonesTable, 2, 7, demandDistance < 1 ? "🔥 CLOSE" : demandDistance < 3 ? "⚠️ NEAR" : "➡️ FAR", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedZonesTable, 2, 7, demandDistance < 1 ? "CLOSE" : demandDistance < 3 ? "NEAR" : "FAR", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🚀 ENHANCED ZERO-LAG INDICATORS TABLE
+// ENHANCED ZERO-LAG INDICATORS TABLE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 var table enhancedIndicatorsTable = na
@@ -2395,126 +2395,126 @@ if barstate.islast and showTables
                                         border_color=getNeutralColor("border"))
     
     // Header row
-    table.cell(enhancedIndicatorsTable, 0, 0, "🚀 INDICATORS", bgcolor=color.new(color.purple, 70), text_color=color.white, text_size=size.normal)
+    table.cell(enhancedIndicatorsTable, 0, 0, "INDICATORS", bgcolor=color.new(color.purple, 70), text_color=color.white, text_size=size.normal)
     table.cell(enhancedIndicatorsTable, 1, 0, "VALUE", bgcolor=color.new(color.purple, 70), text_color=color.white, text_size=size.normal)
     table.cell(enhancedIndicatorsTable, 2, 0, "SIGNAL", bgcolor=color.new(color.purple, 70), text_color=color.white, text_size=size.normal)
     
     // Zero-lag trend strength
-    table.cell(enhancedIndicatorsTable, 0, 1, "📈 ZL Trend", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 1, "ZL Trend", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     trendColor = currentTrendStrength > 0.3 ? color.new(color.green, 80) : 
                 currentTrendStrength < -0.3 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 1, str.tostring(math.round(currentTrendStrength, 3)), bgcolor=trendColor, text_color=color.white, text_size=size.small)
-    trendSignalText = currentTrendStrength > 0.5 ? "🚀 STRONG" : currentTrendStrength > 0.2 ? "📈 UP" : currentTrendStrength < -0.5 ? "🔻 STRONG" : currentTrendStrength < -0.2 ? "📉 DOWN" : "➡️ FLAT"
+    trendSignalText = currentTrendStrength > 0.5 ? "STRONG" : currentTrendStrength > 0.2 ? "UP" : currentTrendStrength < -0.5 ? "STRONG" : currentTrendStrength < -0.2 ? "DOWN" : "FLAT"
     table.cell(enhancedIndicatorsTable, 2, 1, trendSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Zero-lag RSI
-    table.cell(enhancedIndicatorsTable, 0, 2, "⚡ ZL RSI", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 2, "ZL RSI", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     rsiColor = zlRSI > 70 ? color.new(color.red, 80) : 
               zlRSI < 30 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 2, str.tostring(math.round(zlRSI, 1)), bgcolor=rsiColor, text_color=color.white, text_size=size.small)
-    rsiSignalText = zlRSI > 80 ? "🔥 OVERBOUGHT" : zlRSI > 70 ? "⚠️ HIGH" : zlRSI < 20 ? "🔥 OVERSOLD" : zlRSI < 30 ? "⚠️ LOW" : "➡️ NEUTRAL"
+    rsiSignalText = zlRSI > 80 ? "OVERBOUGHT" : zlRSI > 70 ? "HIGH" : zlRSI < 20 ? "OVERSOLD" : zlRSI < 30 ? "LOW" : "NEUTRAL"
     table.cell(enhancedIndicatorsTable, 2, 2, rsiSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Zero-lag MACD
-    table.cell(enhancedIndicatorsTable, 0, 3, "📊 ZL MACD", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 3, "ZL MACD", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     macdColor = zlMACD > zlSignal ? color.new(color.green, 80) : color.new(color.red, 80)
     table.cell(enhancedIndicatorsTable, 1, 3, str.tostring(math.round(zlMACD, 4)), bgcolor=macdColor, text_color=color.white, text_size=size.small)
-    macdSignalText = zlMACD > zlSignal and zlHistogram > zlHistogram[1] ? "🚀 BULLISH" : zlMACD < zlSignal and zlHistogram < zlHistogram[1] ? "🔻 BEARISH" : "➡️ MIXED"
+    macdSignalText = zlMACD > zlSignal and zlHistogram > zlHistogram[1] ? "BULLISH" : zlMACD < zlSignal and zlHistogram < zlHistogram[1] ? "BEARISH" : "MIXED"
     table.cell(enhancedIndicatorsTable, 2, 3, macdSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Stochastic
-    table.cell(enhancedIndicatorsTable, 0, 4, "🎯 ZL Stoch", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 4, "ZL Stoch", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     stochColor = zlStochK > 80 ? color.new(color.red, 80) : 
                 zlStochK < 20 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 4, str.tostring(math.round(zlStochK, 1)), bgcolor=stochColor, text_color=color.white, text_size=size.small)
-    stochSignalText = zlStochK > zlStochD ? "📈 BULLISH" : "📉 BEARISH"
+    stochSignalText = zlStochK > zlStochD ? "BULLISH" : "BEARISH"
     table.cell(enhancedIndicatorsTable, 2, 4, stochSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // CCI
-    table.cell(enhancedIndicatorsTable, 0, 5, "🌊 ZL CCI", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 5, "ZL CCI", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     cciColor = zlCCI > 100 ? color.new(color.red, 80) : 
               zlCCI < -100 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 5, str.tostring(math.round(zlCCI, 1)), bgcolor=cciColor, text_color=color.white, text_size=size.small)
-    cciSignalText = zlCCI > 100 ? "🔥 OVERBOUGHT" : zlCCI < -100 ? "🔥 OVERSOLD" : zlCCI > 0 ? "📈 BULLISH" : "📉 BEARISH"
+    cciSignalText = zlCCI > 100 ? "OVERBOUGHT" : zlCCI < -100 ? "OVERSOLD" : zlCCI > 0 ? "BULLISH" : "BEARISH"
     table.cell(enhancedIndicatorsTable, 2, 5, cciSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Volatility
-    table.cell(enhancedIndicatorsTable, 0, 6, "📊 Volatility", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 6, "Volatility", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     volColor = currentVolatility > 0.02 ? color.new(color.red, 80) : 
               currentVolatility < 0.01 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 6, str.tostring(math.round(currentVolatility * 100, 2)) + "%", bgcolor=volColor, text_color=color.white, text_size=size.small)
-    volSignalText = currentVolatility > 0.025 ? "🔥 HIGH" : currentVolatility > 0.015 ? "⚠️ ELEVATED" : currentVolatility < 0.008 ? "😴 LOW" : "➡️ NORMAL"
+    volSignalText = currentVolatility > 0.025 ? "HIGH" : currentVolatility > 0.015 ? "ELEVATED" : currentVolatility < 0.008 ? "LOW" : "NORMAL"
     table.cell(enhancedIndicatorsTable, 2, 6, volSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Signal accuracy
-    table.cell(enhancedIndicatorsTable, 0, 7, "🎯 ZL Accuracy", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 7, "ZL Accuracy", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     accColor = zlSignalAccuracy > 0.6 ? color.new(color.green, 80) : 
               zlSignalAccuracy < 0.4 ? color.new(color.red, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 7, str.tostring(math.round(zlSignalAccuracy * 100, 1)) + "%", bgcolor=accColor, text_color=color.white, text_size=size.small)
-    accSignalText = zlSignalAccuracy > 0.7 ? "🔥 EXCELLENT" : zlSignalAccuracy > 0.6 ? "✅ GOOD" : zlSignalAccuracy > 0.5 ? "⚠️ FAIR" : "❌ POOR"
+    accSignalText = zlSignalAccuracy > 0.7 ? "EXCELLENT" : zlSignalAccuracy > 0.6 ? "GOOD" : zlSignalAccuracy > 0.5 ? "FAIR" : "POOR"
     table.cell(enhancedIndicatorsTable, 2, 7, accSignalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Adaptive weights
-    table.cell(enhancedIndicatorsTable, 0, 8, "⚖️ Trend Weight", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 8, "Trend Weight", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(enhancedIndicatorsTable, 1, 8, str.tostring(math.round(adaptiveTrendWeight * 100, 0)) + "%", bgcolor=color.new(color.blue, 80), text_color=color.white, text_size=size.small)
-    weightText = adaptiveTrendWeight > 0.7 ? "📈 TREND" : adaptiveTrendWeight < 0.5 ? "🌊 OSCILLATOR" : "⚖️ BALANCED"
+    weightText = adaptiveTrendWeight > 0.7 ? "TREND" : adaptiveTrendWeight < 0.5 ? "OSCILLATOR" : "BALANCED"
     table.cell(enhancedIndicatorsTable, 2, 8, weightText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Final signal strength
     finalSignalStrength = math.abs(finalEnhancedSignal)
-    table.cell(enhancedIndicatorsTable, 0, 9, "💪 Final Signal", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(enhancedIndicatorsTable, 0, 9, "Final Signal", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     finalColor = finalSignalStrength > 0.8 ? color.new(color.lime, 60) : 
                 finalSignalStrength > 0.6 ? color.new(color.green, 80) : 
                 finalSignalStrength > 0.3 ? color.new(color.yellow, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 9, str.tostring(math.round(finalSignalStrength * 100, 0)) + "%", bgcolor=finalColor, text_color=color.white, text_size=size.small)
-    finalText = finalSignalStrength > 0.8 ? "🚀 VERY STRONG" : finalSignalStrength > 0.6 ? "💪 STRONG" : finalSignalStrength > 0.3 ? "⚠️ WEAK" : "😴 NONE"
+    finalText = finalSignalStrength > 0.8 ? "VERY STRONG" : finalSignalStrength > 0.6 ? "STRONG" : finalSignalStrength > 0.3 ? "WEAK" : "NONE"
     table.cell(enhancedIndicatorsTable, 2, 9, finalText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ENHANCED PERFORMANCE METRICS DISPLAY
+// ENHANCED PERFORMANCE METRICS DISPLAY
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Update the existing performance table with enhanced styling
 if barstate.islast and showTables
     // Enhanced header styling for performance table
-    table.cell(perfTable, 0, 0, "📊 PERFORMANCE METRICS", bgcolor=color.new(color.navy, 70), text_color=color.white, text_size=size.normal)
+    table.cell(perfTable, 0, 0, "PERFORMANCE METRICS", bgcolor=color.new(color.navy, 70), text_color=color.white, text_size=size.normal)
     table.cell(perfTable, 1, 0, "VALUE", bgcolor=color.new(color.navy, 70), text_color=color.white, text_size=size.normal)
     
     // Add visual separators and enhanced formatting for key metrics
     if totalTrades > 0
         // Highlight exceptional performance
         if winRate > 70
-            table.cell(perfTable, 0, 4, "🏆 Win Rate", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
+            table.cell(perfTable, 0, 4, "Win Rate", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
             table.cell(perfTable, 1, 4, str.tostring(math.round(winRate, 1)) + "%", bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
         
         if sharpeRatio > 2.0
-            table.cell(perfTable, 0, 8, "🚀 Sharpe Ratio", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
+            table.cell(perfTable, 0, 8, "Sharpe Ratio", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
             table.cell(perfTable, 1, 8, str.tostring(math.round(sharpeRatio, 2)), bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 PHASE 6 COMPLETE - ENHANCED UI & VISUALIZATION ESTABLISHED
+// PHASE 6 COMPLETE - ENHANCED UI & VISUALIZATION ESTABLISHED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Phase 6 Features Implemented:
-// ✅ Advanced table management system with enhanced configurations
-// ✅ Professional color schemes with dynamic intensity-based coloring
-// ✅ Enhanced signal visualization with multiple shape types and sizes
-// ✅ Dynamic background highlighting based on market regime
-// ✅ Comprehensive multi-timeframe signals table with strength indicators
-// ✅ Detailed supply & demand zones table with distance calculations
-// ✅ Advanced zero-lag indicators table with signal interpretations
-// ✅ Enhanced performance metrics display with visual highlighting
-// ✅ Professional styling with borders, gradients, and emoji indicators
-// ✅ Real-time visual feedback for all system components
+// Advanced table management system with enhanced configurations
+// Professional color schemes with dynamic intensity-based coloring
+// Enhanced signal visualization with multiple shape types and sizes
+// Dynamic background highlighting based on market regime
+// Comprehensive multi-timeframe signals table with strength indicators
+// Detailed supply & demand zones table with distance calculations
+// Advanced zero-lag indicators table with signal interpretations
+// Enhanced performance metrics display with visual highlighting
+// Professional styling with borders, gradients, and emoji indicators
+// Real-time visual feedback for all system components
 
 // Ready for Phase 7: Advanced Risk Management & Final Integration
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🛡️ PHASE 7: ADVANCED RISK MANAGEMENT & FINAL INTEGRATION
+// PHASE 7: ADVANCED RISK MANAGEMENT & FINAL INTEGRATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ADVANCED RISK MANAGEMENT FRAMEWORK
+// ADVANCED RISK MANAGEMENT FRAMEWORK
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Risk management configuration structure
@@ -2543,7 +2543,7 @@ riskConfig = RiskConfig.new(
 )
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 DYNAMIC RISK ASSESSMENT SYSTEM
+// DYNAMIC RISK ASSESSMENT SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Real-time risk metrics tracking
@@ -2583,7 +2583,7 @@ updateRiskMetrics() =>
 updateRiskMetrics()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 ADVANCED POSITION SIZING SYSTEM
+// ADVANCED POSITION SIZING SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Multi-factor position sizing calculation
@@ -2626,7 +2626,7 @@ getAdvancedPositionSize(baseSignalStrength, marketConditions) =>
     math.max(0.1, finalPositionSize)  // Minimum 0.1% position size
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🛡️ ADVANCED STOP LOSS MANAGEMENT
+// ADVANCED STOP LOSS MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Dynamic stop loss calculation with multiple methods
@@ -2716,7 +2716,7 @@ getTimeBasedExit() =>
     shouldExit
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 RISK OVERRIDE SYSTEM
+// RISK OVERRIDE SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Risk-based trading override
@@ -2742,7 +2742,7 @@ getRiskOverride() =>
     allowTrading
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🔄 INTEGRATED SIGNAL EXECUTION WITH RISK MANAGEMENT
+// INTEGRATED SIGNAL EXECUTION WITH RISK MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Final signal processing with comprehensive risk management
@@ -2766,7 +2766,7 @@ riskManagedSellSignal = sellSignal and riskAllowsTrading and
                        not na(strongestDemand) ? close > strongestDemand.topPrice * 1.02 : true
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📈 FINAL STRATEGY EXECUTION
+// FINAL STRATEGY EXECUTION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Execute long trades with advanced risk management
@@ -2827,7 +2827,7 @@ if not riskAllowsTrading and strategy.position_size != 0
     strategy.close_all(comment="Risk Override")
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 📊 FINAL RISK METRICS TABLE
+// FINAL RISK METRICS TABLE
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 var table riskTable = na
@@ -2844,49 +2844,49 @@ if barstate.islast and showTables
                            border_color=color.new(color.gray, 60))
     
     // Header row
-    table.cell(riskTable, 0, 0, "🛡️ RISK MGMT", bgcolor=color.new(color.orange, 70), text_color=color.white, text_size=size.normal)
+    table.cell(riskTable, 0, 0, "RISK MGMT", bgcolor=color.new(color.orange, 70), text_color=color.white, text_size=size.normal)
     table.cell(riskTable, 1, 0, "CURRENT", bgcolor=color.new(color.orange, 70), text_color=color.white, text_size=size.normal)
     table.cell(riskTable, 2, 0, "STATUS", bgcolor=color.new(color.orange, 70), text_color=color.white, text_size=size.normal)
     
     // Current drawdown
-    table.cell(riskTable, 0, 1, "📉 Drawdown", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 1, "Drawdown", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     drawdownColor = currentDrawdown > riskConfig.maxDrawdownLimit * 0.8 ? color.new(color.red, 80) : 
                    currentDrawdown > riskConfig.maxDrawdownLimit * 0.5 ? color.new(color.yellow, 80) : color.new(color.green, 80)
     table.cell(riskTable, 1, 1, str.tostring(math.round(currentDrawdown, 2)) + "%", bgcolor=drawdownColor, text_color=color.white, text_size=size.small)
-    drawdownStatus = currentDrawdown > riskConfig.maxDrawdownLimit * 0.8 ? "🚨 HIGH" : 
-                    currentDrawdown > riskConfig.maxDrawdownLimit * 0.5 ? "⚠️ MEDIUM" : "✅ SAFE"
+    drawdownStatus = currentDrawdown > riskConfig.maxDrawdownLimit * 0.8 ? "HIGH" : 
+                    currentDrawdown > riskConfig.maxDrawdownLimit * 0.5 ? "MEDIUM" : "SAFE"
     table.cell(riskTable, 2, 1, drawdownStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Daily P&L
-    table.cell(riskTable, 0, 2, "📊 Daily P&L", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 2, "Daily P&L", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     pnlColor = math.abs(dailyPnL) > riskConfig.maxDailyLoss * 0.8 ? color.new(color.red, 80) : 
               dailyPnL > 0 ? color.new(color.green, 80) : color.new(color.gray, 80)
     table.cell(riskTable, 1, 2, str.tostring(math.round(dailyPnL, 2)) + "%", bgcolor=pnlColor, text_color=color.white, text_size=size.small)
-    pnlStatus = math.abs(dailyPnL) > riskConfig.maxDailyLoss * 0.8 ? "🚨 LIMIT" : 
-               dailyPnL > riskConfig.maxDailyLoss * 0.5 ? "🚀 GOOD" : "➡️ NORMAL"
+    pnlStatus = math.abs(dailyPnL) > riskConfig.maxDailyLoss * 0.8 ? "LIMIT" : 
+               dailyPnL > riskConfig.maxDailyLoss * 0.5 ? "GOOD" : "NORMAL"
     table.cell(riskTable, 2, 2, pnlStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Consecutive losses
-    table.cell(riskTable, 0, 3, "🔄 Consec Loss", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 3, "Consec Loss", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     lossColor = consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.8 ? color.new(color.red, 80) : 
                consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.5 ? color.new(color.yellow, 80) : color.new(color.green, 80)
     table.cell(riskTable, 1, 3, str.tostring(consecutiveLosses), bgcolor=lossColor, text_color=color.white, text_size=size.small)
-    lossStatus = consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.8 ? "🚨 HIGH" : 
-                consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.5 ? "⚠️ CAUTION" : "✅ SAFE"
+    lossStatus = consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.8 ? "HIGH" : 
+                consecutiveLosses >= riskConfig.maxConsecutiveLosses * 0.5 ? "CAUTION" : "SAFE"
     table.cell(riskTable, 2, 3, lossStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Position size
-    table.cell(riskTable, 0, 4, "📏 Position Size", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 4, "Position Size", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(riskTable, 1, 4, str.tostring(math.round(advancedPositionSize, 2)) + "%", bgcolor=color.new(color.blue, 80), text_color=color.white, text_size=size.small)
-    sizeStatus = advancedPositionSize > riskConfig.maxPositionSize * 0.8 ? "🚀 LARGE" : 
-                advancedPositionSize > riskConfig.maxPositionSize * 0.5 ? "📈 MEDIUM" : "📏 SMALL"
+    sizeStatus = advancedPositionSize > riskConfig.maxPositionSize * 0.8 ? "LARGE" : 
+                advancedPositionSize > riskConfig.maxPositionSize * 0.5 ? "MEDIUM" : "SMALL"
     table.cell(riskTable, 2, 4, sizeStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Risk override status
-    table.cell(riskTable, 0, 5, "🛡️ Trading", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 5, "Trading", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     overrideColor = riskAllowsTrading ? color.new(color.green, 80) : color.new(color.red, 80)
     table.cell(riskTable, 1, 5, riskAllowsTrading ? "ENABLED" : "BLOCKED", bgcolor=overrideColor, text_color=color.white, text_size=size.small)
-    overrideStatus = riskAllowsTrading ? "✅ ACTIVE" : "🚨 STOPPED"
+    overrideStatus = riskAllowsTrading ? "ACTIVE" : "STOPPED"
     table.cell(riskTable, 2, 5, overrideStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Current position
@@ -2899,31 +2899,31 @@ if barstate.islast and showTables
     table.cell(riskTable, 2, 6, positionSize != 0 ? str.tostring(math.round(math.abs(positionSize), 2)) : "0", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Trailing stop level
-    table.cell(riskTable, 0, 7, "🎯 Trail Stop", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 7, "Trail Stop", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(riskTable, 1, 7, trailingStopLevel > 0 ? str.tostring(trailingStopLevel, "#.####") : "N/A", bgcolor=color.new(color.purple, 80), text_color=color.white, text_size=size.small)
-    trailStatus = trailingStopLevel > 0 ? "🎯 ACTIVE" : "💤 INACTIVE"
+    trailStatus = trailingStopLevel > 0 ? "ACTIVE" : "💤 INACTIVE"
     table.cell(riskTable, 2, 7, trailStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Breakeven level
-    table.cell(riskTable, 0, 8, "⚖️ Breakeven", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 8, "Breakeven", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     table.cell(riskTable, 1, 8, breakEvenLevel > 0 ? str.tostring(breakEvenLevel, "#.####") : "N/A", bgcolor=color.new(color.teal, 80), text_color=color.white, text_size=size.small)
-    beStatus = breakEvenLevel > 0 ? "⚖️ SET" : "💤 WAITING"
+    beStatus = breakEvenLevel > 0 ? "SET" : "💤 WAITING"
     table.cell(riskTable, 2, 8, beStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Market volatility
-    table.cell(riskTable, 0, 9, "🌊 Vol Risk", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 9, "Vol Risk", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     volRiskColor = currentVolatility > 0.03 ? color.new(color.red, 80) : 
                   currentVolatility > 0.02 ? color.new(color.yellow, 80) : color.new(color.green, 80)
     table.cell(riskTable, 1, 9, str.tostring(math.round(currentVolatility * 100, 2)) + "%", bgcolor=volRiskColor, text_color=color.white, text_size=size.small)
-    volStatus = currentVolatility > 0.03 ? "🚨 HIGH" : currentVolatility > 0.02 ? "⚠️ ELEVATED" : "✅ NORMAL"
+    volStatus = currentVolatility > 0.03 ? "HIGH" : currentVolatility > 0.02 ? "ELEVATED" : "NORMAL"
     table.cell(riskTable, 2, 9, volStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Signal strength
-    table.cell(riskTable, 0, 10, "💪 Signal Str", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 10, "Signal Str", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     signalStrengthColor = finalSignalStrength > 0.7 ? color.new(color.green, 80) : 
                          finalSignalStrength > 0.4 ? color.new(color.yellow, 80) : color.new(color.red, 80)
     table.cell(riskTable, 1, 10, str.tostring(math.round(finalSignalStrength * 100, 0)) + "%", bgcolor=signalStrengthColor, text_color=color.white, text_size=size.small)
-    strengthStatus = finalSignalStrength > 0.7 ? "🚀 STRONG" : finalSignalStrength > 0.4 ? "📈 MEDIUM" : "⚠️ WEAK"
+    strengthStatus = finalSignalStrength > 0.7 ? "STRONG" : finalSignalStrength > 0.4 ? "MEDIUM" : "WEAK"
     table.cell(riskTable, 2, 10, strengthStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Overall risk score
@@ -2932,30 +2932,30 @@ if barstate.islast and showTables
                       (1 - consecutiveLosses / 10) * 0.2 + 
                       (1 - currentVolatility * 20) * 0.3
     
-    table.cell(riskTable, 0, 11, "🎯 Risk Score", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
+    table.cell(riskTable, 0, 11, "Risk Score", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     riskScoreColor = overallRiskScore > 0.8 ? color.new(color.green, 60) : 
                     overallRiskScore > 0.6 ? color.new(color.yellow, 80) : color.new(color.red, 80)
     table.cell(riskTable, 1, 11, str.tostring(math.round(overallRiskScore * 100, 0)) + "%", bgcolor=riskScoreColor, text_color=color.white, text_size=size.small)
-    riskScoreStatus = overallRiskScore > 0.8 ? "🏆 EXCELLENT" : overallRiskScore > 0.6 ? "✅ GOOD" : "🚨 POOR"
+    riskScoreStatus = overallRiskScore > 0.8 ? "EXCELLENT" : overallRiskScore > 0.6 ? "GOOD" : "POOR"
     table.cell(riskTable, 2, 11, riskScoreStatus, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-// 🎯 PHASE 7 COMPLETE - COMPREHENSIVE TRADING SYSTEM ESTABLISHED
+// PHASE 7 COMPLETE - COMPREHENSIVE TRADING SYSTEM ESTABLISHED
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// 🚀 FINAL SYSTEM SUMMARY - ALL 7 PHASES COMPLETE:
+// FINAL SYSTEM SUMMARY - ALL 7 PHASES COMPLETE:
 // 
-// ✅ Phase 1: Pine Script v6 Foundation & Library Integration (287 lines)
-// ✅ Phase 2: Enhanced Lorentzian Classification & ML Core (453 lines) 
-// ✅ Phase 3: Auto-Backtesting & Optimization Engine (457 lines)
-// ✅ Phase 4: Dynamic Supply & Demand Zones (383 lines)
-// ✅ Phase 5: Zero-Lag Adaptive Technical Analysis (282 lines)
-// ✅ Phase 6: Enhanced UI & Visualization (348 lines)
-// ✅ Phase 7: Advanced Risk Management & Final Integration (280 lines)
+// Phase 1: Pine Script v6 Foundation & Library Integration (287 lines)
+// Phase 2: Enhanced Lorentzian Classification & ML Core (453 lines) 
+// Phase 3: Auto-Backtesting & Optimization Engine (457 lines)
+// Phase 4: Dynamic Supply & Demand Zones (383 lines)
+// Phase 5: Zero-Lag Adaptive Technical Analysis (282 lines)
+// Phase 6: Enhanced UI & Visualization (348 lines)
+// Phase 7: Advanced Risk Management & Final Integration (280 lines)
 //
-// 🎯 TOTAL: 2,490 LINES OF INSTITUTIONAL-GRADE PINE SCRIPT CODE
+// TOTAL: 2,490 LINES OF INSTITUTIONAL-GRADE PINE SCRIPT CODE
 //
-// 🏆 COMPREHENSIVE FEATURES IMPLEMENTED:
+// COMPREHENSIVE FEATURES IMPLEMENTED:
 // • Advanced ML-Enhanced Lorentzian Classification with 5-feature vectors
 // • Multi-timeframe analysis (5min, 30min, 1h, 4h) with signal consensus
 // • Sophisticated auto-backtesting with 20+ performance metrics
@@ -2965,7 +2965,7 @@ if barstate.islast and showTables
 // • Advanced risk management with drawdown protection and position sizing
 // • Institutional-grade risk controls and portfolio optimization
 //
-// 🚀 SYSTEM CAPABILITIES:
+// SYSTEM CAPABILITIES:
 // • Real-time ML predictions with confidence scoring
 // • Adaptive signal weighting based on market conditions
 // • Zone-enhanced entry/exit with dynamic stop loss/take profit
