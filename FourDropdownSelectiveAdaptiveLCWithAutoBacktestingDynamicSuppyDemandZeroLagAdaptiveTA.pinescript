@@ -2389,11 +2389,11 @@ if barstate.islast and showTables
     if currentMetrics.totalTrades > 0
         // Highlight exceptional performance
         if currentMetrics.winRate > 0.70
-            table.cell(perfTable, 0, 4, "Win Rate", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
+            table.cell(perfTable, 0, 4, "Win Rate", bgcolor=color.new(color.orange, 60), text_color=color.white, text_size=size.small)
             table.cell(perfTable, 1, 4, str.tostring(math.round(currentMetrics.winRate * 100, 1)) + "%", bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
         
         if currentMetrics.sharpeRatio > 2.0
-            table.cell(perfTable, 0, 8, "Sharpe Ratio", bgcolor=color.new(color.gold, 60), text_color=color.white, text_size=size.small)
+            table.cell(perfTable, 0, 8, "Sharpe Ratio", bgcolor=color.new(color.orange, 60), text_color=color.white, text_size=size.small)
             table.cell(perfTable, 1, 8, str.tostring(math.round(currentMetrics.sharpeRatio, 2)), bgcolor=color.new(color.green, 60), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
