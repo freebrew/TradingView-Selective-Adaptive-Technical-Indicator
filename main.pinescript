@@ -66,28 +66,38 @@ else if trendingType == "PSAR"
 
 // ====== CALCULATE VOLATILITY INDICATORS ======
 
-volatility_signal = 0
+// Always calculate all volatility signals
+bbMiddle = ta.sma(close, volLength)
+bbUpper = bbMiddle + ta.stdev(close, volLength) * volMultiplier
+bbLower = bbMiddle - ta.stdev(close, volLength) * volMultiplier
+bb_signal = close > bbUpper ? 1 : close < bbLower ? -1 : 0
 
-// Calculate only the selected volatility indicator
+atr_value = ta.atr(volLength)
+atr_signal = close > close[1] + atr_value ? 1 : close < close[1] - atr_value ? -1 : 0
+
+kc_middle = ta.ema(close, volLength)
+kc_upper = kc_middle + ta.atr(volLength) * volMultiplier
+kc_lower = kc_middle - ta.atr(volLength) * volMultiplier
+kc_signal = close > kc_upper ? 1 : close < kc_lower ? -1 : 0
+
+std_dev = ta.stdev(close, volLength)
+std_signal = std_dev > ta.sma(std_dev, volLength) ? 1 : std_dev < ta.sma(std_dev, volLength) ? -1 : 0
+
+chaikinVol = ta.change(ta.ema(high - low, volLength), volLength)
+chaikin_signal = chaikinVol > 0 ? 1 : chaikinVol < 0 ? -1 : 0
+
+// Only use the dropdown for the group signal
+volatility_signal = 0
 if volatilityType == "Bollinger Bands"
-    bbMiddle = ta.sma(close, volLength)
-    bbUpper = bbMiddle + ta.stdev(close, volLength) * volMultiplier
-    bbLower = bbMiddle - ta.stdev(close, volLength) * volMultiplier
-    volatility_signal := close > bbUpper ? 1 : close < bbLower ? -1 : 0
+    volatility_signal := bb_signal
 else if volatilityType == "ATR"
-    atr_value = ta.atr(volLength)
-    volatility_signal := close > close[1] + atr_value ? 1 : close < close[1] - atr_value ? -1 : 0
+    volatility_signal := atr_signal
 else if volatilityType == "Keltner Channel"
-    kc_middle = ta.ema(close, volLength)
-    kc_upper = kc_middle + ta.atr(volLength) * volMultiplier
-    kc_lower = kc_middle - ta.atr(volLength) * volMultiplier
-    volatility_signal := close > kc_upper ? 1 : close < kc_lower ? -1 : 0
+    volatility_signal := kc_signal
 else if volatilityType == "Standard Deviation"
-    std_dev = ta.stdev(close, volLength)
-    volatility_signal := std_dev > ta.sma(std_dev, volLength) ? 1 : std_dev < ta.sma(std_dev, volLength) ? -1 : 0
+    volatility_signal := std_signal
 else if volatilityType == "Chaikin Volatility"
-    chaikinVol = ta.change(ta.ema(high - low, volLength), volLength)
-    volatility_signal := chaikinVol > 0 ? 1 : chaikinVol < 0 ? -1 : 0
+    volatility_signal := chaikin_signal
 
 // ====== CALCULATE MOMENTUM INDICATORS ======
 
@@ -387,31 +397,31 @@ psar_30m = request.security(syminfo.tickerid, "30", trending_signal)
 psar_1h = request.security(syminfo.tickerid, "60", trending_signal)
 psar_4h = request.security(syminfo.tickerid, "240", trending_signal)
 // Volatility
-bb_current = volatility_signal
-bb_5m = request.security(syminfo.tickerid, "5", volatility_signal)
-bb_30m = request.security(syminfo.tickerid, "30", volatility_signal)
-bb_1h = request.security(syminfo.tickerid, "60", volatility_signal)
-bb_4h = request.security(syminfo.tickerid, "240", volatility_signal)
-atr_current = volatility_signal
-atr_5m = request.security(syminfo.tickerid, "5", volatility_signal)
-atr_30m = request.security(syminfo.tickerid, "30", volatility_signal)
-atr_1h = request.security(syminfo.tickerid, "60", volatility_signal)
-atr_4h = request.security(syminfo.tickerid, "240", volatility_signal)
-kc_current = volatility_signal
-kc_5m = request.security(syminfo.tickerid, "5", volatility_signal)
-kc_30m = request.security(syminfo.tickerid, "30", volatility_signal)
-kc_1h = request.security(syminfo.tickerid, "60", volatility_signal)
-kc_4h = request.security(syminfo.tickerid, "240", volatility_signal)
-std_current = volatility_signal
-std_5m = request.security(syminfo.tickerid, "5", volatility_signal)
-std_30m = request.security(syminfo.tickerid, "30", volatility_signal)
-std_1h = request.security(syminfo.tickerid, "60", volatility_signal)
-std_4h = request.security(syminfo.tickerid, "240", volatility_signal)
-chaikin_current = volatility_signal
-chaikin_5m = request.security(syminfo.tickerid, "5", volatility_signal)
-chaikin_30m = request.security(syminfo.tickerid, "30", volatility_signal)
-chaikin_1h = request.security(syminfo.tickerid, "60", volatility_signal)
-chaikin_4h = request.security(syminfo.tickerid, "240", volatility_signal)
+bb_current = bb_signal
+bb_5m = request.security(syminfo.tickerid, "5", bb_signal)
+bb_30m = request.security(syminfo.tickerid, "30", bb_signal)
+bb_1h = request.security(syminfo.tickerid, "60", bb_signal)
+bb_4h = request.security(syminfo.tickerid, "240", bb_signal)
+atr_current = atr_signal
+atr_5m = request.security(syminfo.tickerid, "5", atr_signal)
+atr_30m = request.security(syminfo.tickerid, "30", atr_signal)
+atr_1h = request.security(syminfo.tickerid, "60", atr_signal)
+atr_4h = request.security(syminfo.tickerid, "240", atr_signal)
+kc_current = kc_signal
+kc_5m = request.security(syminfo.tickerid, "5", kc_signal)
+kc_30m = request.security(syminfo.tickerid, "30", kc_signal)
+kc_1h = request.security(syminfo.tickerid, "60", kc_signal)
+kc_4h = request.security(syminfo.tickerid, "240", kc_signal)
+std_current = std_signal
+std_5m = request.security(syminfo.tickerid, "5", std_signal)
+std_30m = request.security(syminfo.tickerid, "30", std_signal)
+std_1h = request.security(syminfo.tickerid, "60", std_signal)
+std_4h = request.security(syminfo.tickerid, "240", std_signal)
+chaikin_current = chaikin_signal
+chaikin_5m = request.security(syminfo.tickerid, "5", chaikin_signal)
+chaikin_30m = request.security(syminfo.tickerid, "30", chaikin_signal)
+chaikin_1h = request.security(syminfo.tickerid, "60", chaikin_signal)
+chaikin_4h = request.security(syminfo.tickerid, "240", chaikin_signal)
 // Momentum
 rsi_current = momentum_signal
 rsi_5m = request.security(syminfo.tickerid, "5", momentum_signal)
@@ -515,7 +525,6 @@ if barstate.islast
     table.cell(allSignalsTable, 4, 5, str.tostring(psar_30m), bgcolor=f_col(psar_30m), text_color=color.white)
     table.cell(allSignalsTable, 5, 5, str.tostring(psar_1h), bgcolor=f_col(psar_1h), text_color=color.white)
     table.cell(allSignalsTable, 6, 5, str.tostring(psar_4h), bgcolor=f_col(psar_4h), text_color=color.white)
-    // Volatility
     table.cell(allSignalsTable, 0, 6, "Volatility", bgcolor=color.new(color.gray, 40), text_color=color.white)
     table.cell(allSignalsTable, 1, 6, "Bollinger Bands", bgcolor=color.new(color.gray, 40), text_color=color.white)
     table.cell(allSignalsTable, 2, 6, str.tostring(bb_current), bgcolor=f_col(bb_current), text_color=color.white)
@@ -551,7 +560,6 @@ if barstate.islast
     table.cell(allSignalsTable, 4, 10, str.tostring(chaikin_30m), bgcolor=f_col(chaikin_30m), text_color=color.white)
     table.cell(allSignalsTable, 5, 10, str.tostring(chaikin_1h), bgcolor=f_col(chaikin_1h), text_color=color.white)
     table.cell(allSignalsTable, 6, 10, str.tostring(chaikin_4h), bgcolor=f_col(chaikin_4h), text_color=color.white)
-    // Momentum
     table.cell(allSignalsTable, 0, 11, "Momentum", bgcolor=color.new(color.gray, 40), text_color=color.white)
     table.cell(allSignalsTable, 1, 11, "RSI", bgcolor=color.new(color.gray, 40), text_color=color.white)
     table.cell(allSignalsTable, 2, 11, str.tostring(rsi_current), bgcolor=f_col(rsi_current), text_color=color.white)
@@ -587,7 +595,6 @@ if barstate.islast
     table.cell(allSignalsTable, 4, 15, str.tostring(macd_hist_30m), bgcolor=f_col(macd_hist_30m), text_color=color.white)
     table.cell(allSignalsTable, 5, 15, str.tostring(macd_hist_1h), bgcolor=f_col(macd_hist_1h), text_color=color.white)
     table.cell(allSignalsTable, 6, 15, str.tostring(macd_hist_4h), bgcolor=f_col(macd_hist_4h), text_color=color.white)
-    // Volume
     table.cell(allSignalsTable, 0, 16, "Volume", bgcolor=color.new(color.gray, 40), text_color=color.white)
     table.cell(allSignalsTable, 1, 16, "OBV", bgcolor=color.new(color.gray, 40), text_color=color.white)
     table.cell(allSignalsTable, 2, 16, str.tostring(obv_current), bgcolor=f_col(obv_current), text_color=color.white)
