@@ -1802,17 +1802,17 @@ adaptiveCCI(length, adaptiveFactor) =>
     adaptiveLength = getAdaptivePeriod(length, currentTrendStrength, currentVolatility)
     
     // Traditional CCI calculation
-    hlc3 = (high + low + close) / 3
-    sma = ta.sma(hlc3, adaptiveLength)
+    localHLC3 = (high + low + close) / 3
+    sma = ta.sma(localHLC3, adaptiveLength)
     deviation = 0.0
     for i = 0 to adaptiveLength - 1
-        deviation += math.abs(hlc3[i] - sma)
+        deviation += math.abs(localHLC3[i] - sma)
     deviation := deviation / adaptiveLength
     
-    cci = (hlc3 - sma) / (0.015 * deviation)
+    localCCI = (localHLC3 - sma) / (0.015 * deviation)
     
     // Zero-lag smoothing
-    zlCCI = zeroLagEMA(cci, math.round(adaptiveLength * adaptiveFactor))
+    zlCCI = zeroLagEMA(localCCI, math.round(adaptiveLength * adaptiveFactor))
     zlCCI
 
 // Calculate adaptive oscillators
