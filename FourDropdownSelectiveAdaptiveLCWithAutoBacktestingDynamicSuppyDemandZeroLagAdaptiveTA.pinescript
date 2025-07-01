@@ -1085,9 +1085,9 @@ optimalPositionSize = optimizationMode == "Kelly Criterion" ? getKellyPositionSi
 
 // Calculate optimized position size
 currentEquity = strategy.equity
-optimizedRiskAmount = currentEquity * (optimalPositionSize / 100)
-stopLossPrice = close * (1 - finalStopLoss / 100)
-optimizedPositionSize = optimizedRiskAmount / (close - stopLossPrice)
+optimizedRiskAmount = currentEquity * (optimalPositionSize / 100)  // ✅ Unique variable name
+optimizedStopLossPrice = close * (1 - finalStopLoss / 100)  // ✅ Unique variable name
+optimizedPositionSize = optimizedRiskAmount / (close - optimizedStopLossPrice)
 
 // Enhanced entry conditions with optimization
 shouldEnterLong = buySignal and strategy.position_size == 0 and (optimizationMode != "Conservative" or lcConfidence > 0.6)
@@ -2666,28 +2666,28 @@ riskManagedSellSignal = sellSignal and riskAllowsTrading and currentDrawdown < r
 // Execute long trades with advanced risk management
 if riskManagedBuySignal and strategy.position_size == 0
     entryPrice = close
-    stopLossPrice = getAdvancedStopLoss(entryPrice, 1, finalSignalStrength)
+    longStopLossPrice = getAdvancedStopLoss(entryPrice, 1, finalSignalStrength)
     takeProfitPrice = getZoneBasedTakeProfit(entryPrice, 1)
     
     // Initialize trailing stops
-    trailingStopLevel := stopLossPrice
+    trailingStopLevel := longStopLossPrice
     breakEvenLevel := entryPrice
     
     strategy.entry("Long", strategy.long, qty=advancedPositionSize)
-    strategy.exit("Long Exit", "Long", stop=stopLossPrice, limit=takeProfitPrice)
+    strategy.exit("Long Exit", "Long", stop=longStopLossPrice, limit=takeProfitPrice)
 
 // Execute short trades with advanced risk management
 if riskManagedSellSignal and strategy.position_size == 0
     entryPrice = close
-    stopLossPrice = getAdvancedStopLoss(entryPrice, -1, finalSignalStrength)
+    shortStopLossPrice = getAdvancedStopLoss(entryPrice, -1, finalSignalStrength)
     takeProfitPrice = getZoneBasedTakeProfit(entryPrice, -1)
     
     // Initialize trailing stops
-    trailingStopLevel := stopLossPrice
+    trailingStopLevel := shortStopLossPrice
     breakEvenLevel := entryPrice
     
     strategy.entry("Short", strategy.short, qty=advancedPositionSize)
-    strategy.exit("Short Exit", "Short", stop=stopLossPrice, limit=takeProfitPrice)
+    strategy.exit("Short Exit", "Short", stop=shortStopLossPrice, limit=takeProfitPrice)
 
 // Update trailing stops for open positions
 if strategy.position_size > 0  // Long position
