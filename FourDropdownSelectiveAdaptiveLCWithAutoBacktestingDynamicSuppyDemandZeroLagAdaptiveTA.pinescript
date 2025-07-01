@@ -1709,10 +1709,25 @@ zeroLagMACD(src, fastLength, slowLength, signalLength) =>
 
 // Adaptive RSI with zero-lag smoothing
 adaptiveZeroLagRSI(src, length, adaptiveFactor) =>
-    // Calculate traditional RSI
-    up = ta.rma(math.max(ta.change(src), 0), length)
-    down = ta.rma(-math.min(ta.change(src), 0), length)
-    rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+    // Calculate traditional RSI using manual calculation to handle series int length
+    change = ta.change(src)
+    gain = math.max(change, 0)
+    loss = -math.min(change, 0)
+    
+    // Manual RMA calculation for series int compatibility
+    var float avgGain = na
+    var float avgLoss = na
+    
+    if na(avgGain)
+        avgGain := ta.sma(gain, length)
+        avgLoss := ta.sma(loss, length)
+    else
+        avgGain := (avgGain * (length - 1) + gain) / length
+        avgLoss := (avgLoss * (length - 1) + loss) / length
+    
+    // Calculate RSI
+    rs = avgLoss == 0 ? 100 : avgGain / avgLoss
+    rsi = 100 - (100 / (1 + rs))
     
     // Apply zero-lag smoothing with adaptive factor
     smoothLength = math.round(length * adaptiveFactor)
