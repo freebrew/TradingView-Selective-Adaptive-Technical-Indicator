@@ -2,7 +2,7 @@
 
 A comprehensive Pine Script v6 trading strategy that combines four different categories of technical indicators with multi-timeframe analysis and configurable signal combination strategies.
 
-## 🎯 Strategy Overview
+## Strategy Overview
 
 This strategy allows traders to select one indicator from each of four major categories:
 - **Trending Indicators** - Identify market direction
@@ -19,37 +19,37 @@ This strategy allows traders to select one indicator from each of four major cat
 - **Real-time Performance Tracking**: Live performance metrics and trade monitoring
 - **Alert System**: Configurable alerts for buy/sell signals
 
-## 📊 Available Indicators
+## Available Indicators
 
 ### Trending Indicators
-- **SMA (Simple Moving Average)** → Leading
-- **EMA (Exponential Moving Average)** → Leading  
-- **MACD (Moving Average Convergence Divergence)** → Leading
-- **ADX (Average Directional Index)** ← Lagging
-- **Parabolic SAR** ← Lagging
+- **SMA (Simple Moving Average)** Leading
+- **EMA (Exponential Moving Average)** Leading  
+- **MACD (Moving Average Convergence Divergence)** Leading
+- **ADX (Average Directional Index)** Lagging
+- **Parabolic SAR** Lagging
 
 ### Volatility Indicators
-- **Bollinger Bands** → Leading
-- **ATR (Average True Range)** → Leading
-- **Keltner Channel** → Leading
-- **Standard Deviation** ← Lagging
-- **Chaikin Volatility** ← Lagging
+- **Bollinger Bands** Leading
+- **ATR (Average True Range)** Leading
+- **Keltner Channel** Leading
+- **Standard Deviation** Lagging
+- **Chaikin Volatility** Lagging
 
 ### Momentum Indicators
-- **RSI (Relative Strength Index)** → Leading
-- **Stochastic Oscillator** → Leading
-- **CCI (Commodity Channel Index)** → Leading
-- **Williams %R** ← Lagging
-- **MACD Histogram** ← Lagging
+- **RSI (Relative Strength Index)** Leading
+- **Stochastic Oscillator** Leading
+- **CCI (Commodity Channel Index)** Leading
+- **Williams %R** Lagging
+- **MACD Histogram** Lagging
 
 ### Volume Indicators
-- **OBV (On-Balance Volume)** → Leading
-- **MFI (Money Flow Index)** → Leading
-- **Chaikin Money Flow** → Leading
-- **Volume Oscillator** ← Lagging
-- **A/D Line (Accumulation/Distribution)** ← Lagging
+- **OBV (On-Balance Volume)** Leading
+- **MFI (Money Flow Index)** Leading
+- **Chaikin Money Flow** Leading
+- **Volume Oscillator** Lagging
+- **A/D Line (Accumulation/Distribution)** Lagging
 
-## 🎛️ Strategy Presets
+## Strategy Presets
 
 ### Default
 Standard settings suitable for general market conditions.
@@ -82,7 +82,7 @@ Maximized for strong trend following with longer-term parameters.
 - RSI: 12 periods, 68/32 levels
 - Volume period: 12
 
-## 🔄 Signal Combination Strategies
+## Signal Combination Strategies
 
 ### All Agree
 Requires all four selected indicators to agree (all bullish or all bearish) before generating a signal. Most conservative approach with highest accuracy but fewer trades.
@@ -93,7 +93,7 @@ Generates signals when at least 3 out of 4 indicators agree. Balanced approach b
 ### Custom Threshold
 Allows setting a custom number (1-4) of indicators required to agree. Provides maximum flexibility for different risk tolerances.
 
-## 🛡️ Risk Management Features
+## Risk Management Features
 
 ### Stop Loss & Take Profit
 - Configurable percentage-based stop loss (default: 2%)
@@ -115,7 +115,7 @@ Allows setting a custom number (1-4) of indicators required to agree. Provides m
 - Maximum drawdown protection (15% of equity)
 - Real-time position monitoring and alerts
 
-## 📈 Multi-Timeframe Analysis
+## Multi-Timeframe Analysis
 
 The strategy analyzes signals across multiple timeframes:
 - **Current Timeframe**: Primary trading signals
@@ -130,7 +130,7 @@ Real-time table showing:
 - Combined signal strength per timeframe
 - Color-coded visualization (Green: Bullish, Red: Bearish, Gray: Neutral)
 
-## 📊 Performance Monitoring
+## Performance Monitoring
 
 ### Live Performance Metrics
 - **Net Profit**: Total profit/loss and percentage return
@@ -146,7 +146,7 @@ Real-time table showing:
 - **Active Preset**: Currently selected preset configuration
 - **Preset Description**: Brief description of active preset
 
-## 🔧 Technical Implementation
+## Technical Implementation
 
 ### Pine Script v6 Features
 - Modern Pine Script syntax and best practices
@@ -195,7 +195,7 @@ final_signal = signalStrategy == "All Agree" ?
 - Minimal security calls with batched requests
 - Smart variable initialization with `var` keyword
 
-## 🚀 Usage Instructions
+## Usage Instructions
 
 ### For Traders
 
@@ -214,7 +214,7 @@ final_signal = signalStrategy == "All Agree" ?
 4. **Integration**: Alert system compatible with external trading bots
 5. **Testing**: Built-in backtesting with detailed performance metrics
 
-## 📋 Configuration Options
+## Configuration Options
 
 ### Input Groups
 - **Strategy Presets**: Pre-configured parameter sets
@@ -230,7 +230,7 @@ final_signal = signalStrategy == "All Agree" ?
 - **Sell Signal Alert**: Triggered when bearish signal is generated
 - **Custom Messages**: Configurable alert messages for external systems
 
-## 🎨 Visual Features
+## Visual Features
 
 ### Chart Overlays
 - Buy/Sell signal markers (triangles)
@@ -243,7 +243,7 @@ final_signal = signalStrategy == "All Agree" ?
 - **Performance Metrics**: Live trading statistics and results
 - **Preset Information**: Active configuration details
 
-## ⚡ Advanced Features
+## Advanced Features
 
 ### Custom ADX Implementation
 Full custom implementation of Average Directional Index with:
@@ -264,7 +264,7 @@ Preset-based parameter updating system that:
 - Daily trade counter with automatic reset
 - Maximum drawdown protection
 
-## 📝 Best Practices
+## Best Practices
 
 ### For Optimal Performance
 1. **Backtest Thoroughly**: Test different presets on historical data
@@ -280,7 +280,7 @@ Preset-based parameter updating system that:
 4. **Stop Losses**: Always use stop-loss orders
 5. **Take Profits**: Set realistic profit targets
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 - **No Signals**: Check if "All Agree" is too conservative for current market
@@ -295,7 +295,7 @@ Preset-based parameter updating system that:
 - Monitor volume confirmation
 - Watch for divergences between timeframes
 
-## 📄 License & Disclaimer
+## License & Disclaimer
 
 This strategy is provided for educational and research purposes. Past performance does not guarantee future results. Always conduct thorough backtesting and consider your risk tolerance before live trading.
 
