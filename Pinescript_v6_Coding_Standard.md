@@ -19,10 +19,10 @@ This document establishes mandatory coding standards for Pine Script v6 institut
 #### Examples:
 ```pinescript
 // FORBIDDEN - Never use emojis
-// 🚀 Buy signal activated
-// 📊 Performance table
-// ✅ Validation passed
-// ❌ Error detected
+// Buy signal activated
+// Performance table
+// Validation passed
+// Error detected
 
 // CORRECT - Use descriptive text
 // Buy signal activated
@@ -355,12 +355,12 @@ type ComplexTradingSignal
 **GOLDEN RULE: When in doubt, put it on one line!**
 
 This approach guarantees:
-- ✅ Pine Script v6 compatibility
-- ✅ Elimination of line continuation errors
-- ✅ Professional code standards
-- ✅ Institutional-grade reliability
-- ✅ Consistent cross-platform behavior
-- ✅ Simplified maintenance and debugging
+- Pine Script v6 compatibility
+- Elimination of line continuation errors
+- Professional code standards
+- Institutional-grade reliability
+- Consistent cross-platform behavior
+- Simplified maintenance and debugging
 
 ## COMPLIANCE VERIFICATION
 
