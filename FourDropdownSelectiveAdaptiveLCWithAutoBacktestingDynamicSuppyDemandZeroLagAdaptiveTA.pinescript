@@ -2136,37 +2136,17 @@ getSignalColor(signal, strength) =>
 // ENHANCED SIGNAL VISUALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Advanced signal shapes with dynamic sizing
-plotSignalShape(signal, signalType, strength) =>
-    if signal != 0
-        shapeSize = strength > 0.7 ? size.large : strength > 0.4 ? size.normal : size.small
-        
-        if signal > 0
-            if signalType == "main"
-                plotshape(true, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=shapeSize)
-            else if signalType == "zone"
-                plotshape(true, title="Zone Buy", style=shape.circle, location=location.belowbar, color=getBullishColor("moderate"), size=size.tiny)
-            else if signalType == "zl"
-                plotshape(true, title="ZL Buy", style=shape.diamond, location=location.belowbar, color=getBullishColor("weak"), size=size.tiny)
-        else
-            if signalType == "main"
-                plotshape(true, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=shapeSize)
-            else if signalType == "zone"
-                plotshape(true, title="Zone Sell", style=shape.circle, location=location.abovebar, color=getBearishColor("moderate"), size=size.tiny)
-            else if signalType == "zl"
-                plotshape(true, title="ZL Sell", style=shape.diamond, location=location.abovebar, color=getBearishColor("weak"), size=size.tiny)
+// Advanced signal shapes with dynamic sizing - Direct plotshape calls in global scope
+buySignalShapeSize = buySignal ? (finalSignalStrength > 0.7 ? size.large : finalSignalStrength > 0.4 ? size.normal : size.small) : na
+sellSignalShapeSize = sellSignal ? (finalSignalStrength > 0.7 ? size.large : finalSignalStrength > 0.4 ? size.normal : size.small) : na
 
 // Plot enhanced signals with different markers
-if buySignal
-    plotSignalShape(1, "main", 0.8)
-if sellSignal
-    plotSignalShape(-1, "main", 0.8)
+plotshape(buySignal, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=buySignalShapeSize)
+plotshape(sellSignal, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=sellSignalShapeSize)
 
 // Additional signal layers for analysis
-if adaptiveZLSignal == 1 and not buySignal
-    plotSignalShape(1, "zl", 0.5)
-if adaptiveZLSignal == -1 and not sellSignal
-    plotSignalShape(-1, "zl", 0.5)
+plotshape(adaptiveZLSignal == 1 and not buySignal, title="ZL Buy", style=shape.diamond, location=location.belowbar, color=getBullishColor("weak"), size=size.tiny)
+plotshape(adaptiveZLSignal == -1 and not sellSignal, title="ZL Sell", style=shape.diamond, location=location.abovebar, color=getBearishColor("weak"), size=size.tiny)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // DYNAMIC BACKGROUND HIGHLIGHTING
