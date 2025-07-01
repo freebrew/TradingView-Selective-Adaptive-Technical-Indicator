@@ -1084,8 +1084,8 @@ optimalPositionSize = optimizationMode == "Kelly Criterion" ? getKellyPositionSi
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate optimized position size
-currentEquity = strategy.equity
-optimizedRiskAmount = currentEquity * (optimalPositionSize / 100)  // ✅ Unique variable name
+optimizationEquity = strategy.equity
+optimizedRiskAmount = optimizationEquity * (optimalPositionSize / 100)  // ✅ Unique variable name
 optimizedStopLossPrice = close * (1 - finalStopLoss / 100)  // ✅ Unique variable name
 optimizedPositionSize = optimizedRiskAmount / (close - optimizedStopLossPrice)
 
