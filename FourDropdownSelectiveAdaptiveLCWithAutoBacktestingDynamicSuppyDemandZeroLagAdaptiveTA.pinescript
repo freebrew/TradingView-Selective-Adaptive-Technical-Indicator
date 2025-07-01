@@ -1085,9 +1085,9 @@ optimalPositionSize = optimizationMode == "Kelly Criterion" ? getKellyPositionSi
 
 // Calculate optimized position size
 currentEquity = strategy.equity
-riskAmount = currentEquity * (optimalPositionSize / 100)
+optimizedRiskAmount = currentEquity * (optimalPositionSize / 100)
 stopLossPrice = close * (1 - finalStopLoss / 100)
-optimizedPositionSize = riskAmount / (close - stopLossPrice)
+optimizedPositionSize = optimizedRiskAmount / (close - stopLossPrice)
 
 // Enhanced entry conditions with optimization
 shouldEnterLong = buySignal and strategy.position_size == 0 and (optimizationMode != "Conservative" or lcConfidence > 0.6)
