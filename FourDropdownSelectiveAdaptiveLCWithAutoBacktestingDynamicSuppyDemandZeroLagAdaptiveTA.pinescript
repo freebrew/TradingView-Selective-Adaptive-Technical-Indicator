@@ -36,8 +36,8 @@ optimizationMode = input.string("Auto-Backtest", "Optimization", options=["Manua
 // LORENTZIAN CLASSIFICATION SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 performanceMode = input.bool(true, title="⚡ Performance Mode (Faster Execution)", tooltip="Reduces computational load for faster execution", group="ML Settings")
-neighborsCount = input.int(8, title="Neighbors Count", minval=1, maxval=20, group="ML Settings")  // Increased back to 8 for better prediction quality
-maxBarsBack = input.int(500, title="Max Bars Back", minval=50, maxval=1000, group="ML Settings")  // Increased to 500 for better pattern recognition
+neighborsCount = input.int(12, title="Neighbors Count", minval=1, maxval=20, group="ML Settings")  // Increased to 12 with saved computation
+maxBarsBack = input.int(750, title="Max Bars Back", minval=50, maxval=1000, group="ML Settings")  // Increased to 750 with saved computation
 featureCount = input.int(5, title="Feature Count", minval=2, maxval=5, group="ML Settings")
 colorCompression = input.int(1, title="Color Compression", minval=1, maxval=10, group="ML Settings")
 showExits = input.bool(false, title="Show Exits", group="ML Settings")
@@ -759,10 +759,18 @@ shouldExit() =>
 
 // Enhanced buy/sell signals using LC predictions - ULTRA STRICT FILTERING
 // Multiple confirmation filters for highest quality trades only
-trendFilter = adxValue > 35  // Only trade in strong trending markets (increased from 25)
+// Enhanced trend filter with directional confirmation (using saved computation)
+trendFilter = adxValue > 35  // Strong trend requirement
+trendDirection = ta.ema(close, 20) > ta.ema(close, 50)  // Trend direction confirmation
+trendAcceleration = ta.ema(close, 10) > ta.ema(close, 20)  // Trend acceleration
+enhancedTrendFilter = trendFilter and (trendDirection == trendAcceleration)  // Trend must be consistent
 volumeFilter = volume > ta.sma(volume, 20) * 2.0  // Strong volume confirmation (increased from 1.2x to 2.0x)
 volatilityFilter = ta.atr(14) > ta.sma(ta.atr(14), 50) * 1.3  // Higher volatility for better moves
-momentumFilter = math.abs(close - close[5]) / close > 0.01  // Minimum 1% price movement over 5 bars
+// Enhanced momentum filter with multiple timeframes (using saved computation)
+shortMomentum = math.abs(close - close[3]) / close > 0.005  // 0.5% over 3 bars
+mediumMomentum = math.abs(close - close[10]) / close > 0.015  // 1.5% over 10 bars
+longMomentum = math.abs(close - close[20]) / close > 0.025  // 2.5% over 20 bars
+momentumFilter = shortMomentum and mediumMomentum and longMomentum  // All momentum criteria must be met
 
 // All timeframes must strongly agree
 mtfAlignment = signal5m == signal30m and signal5m == signal1h and signal30m == signal1h
@@ -786,28 +794,26 @@ rsiOverbought = ta.rsi(close, 14) > 80
 rsiOversold = ta.rsi(close, 14) < 20
 marketConditionFilter = not (rsiOverbought or rsiOversold)  // Avoid extreme RSI conditions
 
-// FINAL SIGNAL GENERATION with all filters
-buySignal := lcBuySignal and tradeFrequencyFilter and marketConditionFilter
-sellSignal := lcSellSignal and tradeFrequencyFilter and marketConditionFilter
+// FINAL SIGNAL GENERATION with all enhanced filters (using optimized computation)
+buySignal := lcBuySignal and tradeFrequencyFilter and marketConditionFilter and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter
+sellSignal := lcSellSignal and tradeFrequencyFilter and marketConditionFilter and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ENHANCED TABLE UPDATES WITH LC METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-if barstate.islast and showTables
-    // Add LC-specific rows to performance table
+// OPTIMIZED: Only update tables every 5 bars to reduce computational load
+if barstate.islast and showTables and bar_index % 5 == 0
+    // Add LC-specific rows to performance table (reduced frequency)
     table.cell(perfTable, 0, 8, "LC Confidence", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     table.cell(perfTable, 1, 8, str.tostring(math.round(lcConfidence * 100, 1)) + "%", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     
-    // Expand performance table
+    // Essential metrics only for performance
     table.cell(perfTable, 0, 9, "Signal Strength", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     table.cell(perfTable, 1, 9, signalStrength, bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     
-    table.cell(perfTable, 0, 10, "LC Prediction", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    table.cell(perfTable, 1, 10, str.tostring(math.round(lcPrediction, 3)), bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    
-    table.cell(perfTable, 0, 11, "Combined Signal", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
-    table.cell(perfTable, 1, 11, signalToText(combinedSignal), bgcolor=signalColor(combinedSignal), text_color=color.white, text_size=size.small)
+    table.cell(perfTable, 0, 10, "Combined Signal", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
+    table.cell(perfTable, 1, 10, signalToText(combinedSignal), bgcolor=signalColor(combinedSignal), text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // PHASE 2 COMPLETE - ENHANCED LC & ML CORE ESTABLISHED
@@ -899,14 +905,17 @@ if strategy.equity > 0 and initialEquity > 0
     if currentDrawdown < currentMetrics.maxDrawdown
         currentMetrics.maxDrawdown := currentDrawdown
     
-    // Calculate volatility (annualized)
-    if array.size(returns) > 30
-        avgReturn = array.avg(returns)
+    // Calculate volatility (annualized) - OPTIMIZED: Only calculate every 10 bars
+    if array.size(returns) > 30 and bar_index % 10 == 0
+        // Use simplified volatility calculation
+        recentReturns = array.slice(returns, math.max(0, array.size(returns) - 50), array.size(returns) - 1)  // Last 50 returns only
+        avgReturn = array.avg(recentReturns)
         variance = 0.0
-        for i = 0 to array.size(returns) - 1
-            ret = array.get(returns, i)
+        size = array.size(recentReturns)
+        for i = 0 to size - 1
+            ret = array.get(recentReturns, i)
             variance += math.pow(ret - avgReturn, 2)
-        variance := variance / array.size(returns)
+        variance := variance / size
         currentMetrics.volatility := math.sqrt(variance) * math.sqrt(252)  // Annualized
     
     // Calculate Sharpe ratio (assuming 2% risk-free rate)
@@ -918,13 +927,14 @@ if strategy.equity > 0 and initialEquity > 0
     if math.abs(currentMetrics.maxDrawdown) > 0
         currentMetrics.calmarRatio := totalReturn / math.abs(currentMetrics.maxDrawdown)
     
-    // Calculate Sortino ratio (downside deviation)
-    if array.size(returns) > 30
-        avgReturn = array.avg(returns)
+    // Calculate Sortino ratio (downside deviation) - OPTIMIZED: Only calculate every 20 bars
+    if array.size(returns) > 30 and bar_index % 20 == 0
+        // Use simplified Sortino calculation with recent data only
+        recentReturns = array.slice(returns, math.max(0, array.size(returns) - 30), array.size(returns) - 1)  // Last 30 returns only
         downsideVariance = 0.0
         downsideCount = 0
-        for i = 0 to array.size(returns) - 1
-            ret = array.get(returns, i)
+        for i = 0 to array.size(recentReturns) - 1
+            ret = array.get(recentReturns, i)
             if ret < 0
                 downsideVariance += math.pow(ret, 2)
                 downsideCount += 1
@@ -1002,30 +1012,19 @@ type OptimizationSet
     string signalProcessing
     float score
 
-// Define optimization parameter ranges
+// Define optimization parameter ranges - SIMPLIFIED FOR PERFORMANCE
 getOptimizationSets() =>
     var OptimizationSet[] sets = array.new<OptimizationSet>()
-    array.clear(sets)
     
-    // Base parameter set (current settings)
-    baseSet = OptimizationSet.new(rsiLength, cciLength, adxLength, neighborsCount, riskPerTrade, stopLossPercent, takeProfitPercent, kernelType, signalProcessing, 0.0)
-    array.push(sets, baseSet)
-    
-    // Conservative set
-    conservativeSet = OptimizationSet.new(21, 25, 18, 6, 1.0, 3.0, 6.0, "Gaussian", "Adaptive T3", 0.0)
-    array.push(sets, conservativeSet)
-    
-    // Aggressive set
-    aggressiveSet = OptimizationSet.new(10, 15, 12, 12, 3.0, 2.0, 8.0, "Rational Quadratic", "Zero-Lag", 0.0)
-    array.push(sets, aggressiveSet)
-    
-    // Balanced set
-    balancedSet = OptimizationSet.new(16, 18, 16, 8, 2.0, 2.5, 7.0, "Periodic", "Standard", 0.0)
-    array.push(sets, balancedSet)
-    
-    // Volatility-adaptive set
-    volatilitySet = OptimizationSet.new(12, 20, 14, 10, 2.5, 4.0, 5.0, "Locally Periodic", "Adaptive T3", 0.0)
-    array.push(sets, volatilitySet)
+    // Only initialize once to save computation
+    if array.size(sets) == 0
+        // Base parameter set (current settings)
+        baseSet = OptimizationSet.new(rsiLength, cciLength, adxLength, neighborsCount, riskPerTrade, stopLossPercent, takeProfitPercent, kernelType, signalProcessing, 0.0)
+        array.push(sets, baseSet)
+        
+        // Conservative set only (removed others for performance)
+        conservativeSet = OptimizationSet.new(21, 25, 18, 6, 1.0, 3.0, 6.0, "Gaussian", "Adaptive T3", 0.0)
+        array.push(sets, conservativeSet)
     
     sets
 
@@ -1033,28 +1032,21 @@ getOptimizationSets() =>
 // OPTIMIZATION SCORING SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Multi-objective optimization scoring
+// Multi-objective optimization scoring - SIMPLIFIED FOR PERFORMANCE
 calculateOptimizationScore(metrics) =>
-    // Normalize metrics to 0-1 scale
-    returnScore = math.max(0, math.min(1, (metrics.totalReturn + 0.5) / 1.5))  // -50% to 100%
-    sharpeScore = math.max(0, math.min(1, (metrics.sharpeRatio + 1) / 3))      // -1 to 2
-    drawdownScore = math.max(0, math.min(1, 1 + metrics.maxDrawdown / 0.5))    // 0% to -50%
-    winRateScore = metrics.winRate  // Already 0-1
-    profitFactorScore = math.max(0, math.min(1, (metrics.profitFactor - 0.5) / 2))  // 0.5 to 2.5
-    calmarScore = math.max(0, math.min(1, metrics.calmarRatio / 3))            // 0 to 3
+    // Simplified scoring without arrays and loops
+    returnScore = math.max(0, math.min(1, (metrics.totalReturn + 0.5) / 1.5))
+    drawdownScore = math.max(0, math.min(1, 1 + metrics.maxDrawdown / 0.5))
+    winRateScore = metrics.winRate
     
-    // Weighted composite score
-    weights = array.from(0.25, 0.20, 0.20, 0.15, 0.10, 0.10)  // Return, Sharpe, Drawdown, WinRate, ProfitFactor, Calmar
-    scores = array.from(returnScore, sharpeScore, drawdownScore, winRateScore, profitFactorScore, calmarScore)
-    
-    totalScore = 0.0
-    for i = 0 to array.size(weights) - 1
-        totalScore += array.get(weights, i) * array.get(scores, i)
-    
+    // Simple weighted average (removed complex array operations)
+    totalScore = (returnScore * 0.4) + (drawdownScore * 0.35) + (winRateScore * 0.25)
     totalScore
 
-// Current optimization score
-currentOptimizationScore = calculateOptimizationScore(currentMetrics)
+// Current optimization score - ONLY CALCULATE EVERY 50 BARS
+var float currentOptimizationScore = 0.0
+if bar_index % 50 == 0
+    currentOptimizationScore := calculateOptimizationScore(currentMetrics)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // DYNAMIC PARAMETER ADJUSTMENT
