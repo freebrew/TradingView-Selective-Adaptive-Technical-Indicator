@@ -1185,7 +1185,7 @@ type SupplyDemandZone
 // Global zone tracking arrays
 var SupplyDemandZone[] supplyZones = array.new<SupplyDemandZone>()
 var SupplyDemandZone[] demandZones = array.new<SupplyDemandZone>()
-var int maxZones = 20  // Maximum zones to track
+// maxZones is already defined as input parameter on line 58
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // PIVOT POINT DETECTION SYSTEM
