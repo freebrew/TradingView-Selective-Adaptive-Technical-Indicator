@@ -35,12 +35,42 @@ optimizationMode = input.string("Auto-Backtest", "Optimization", options=["Manua
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // LORENTZIAN CLASSIFICATION SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-neighborsCount = input.int(8, title="Neighbors Count", minval=1, maxval=100, group="ML Settings")
-maxBarsBack = input.int(2000, title="Max Bars Back", minval=1, maxval=5000, group="ML Settings")
+performanceMode = input.bool(true, title="⚡ Performance Mode (Faster Execution)", tooltip="Reduces computational load for faster execution", group="ML Settings")
+neighborsCount = input.int(5, title="Neighbors Count", minval=1, maxval=20, group="ML Settings")  // Reduced from 8 to 5, max from 100 to 20
+maxBarsBack = input.int(300, title="Max Bars Back", minval=50, maxval=1000, group="ML Settings")  // Reduced from 2000 to 300, max from 5000 to 1000
 featureCount = input.int(5, title="Feature Count", minval=2, maxval=5, group="ML Settings")
 colorCompression = input.int(1, title="Color Compression", minval=1, maxval=10, group="ML Settings")
 showExits = input.bool(false, title="Show Exits", group="ML Settings")
 useDynamicExits = input.bool(false, title="Dynamic Exits", group="ML Settings")
+
+// Performance optimization - calculate ML predictions less frequently
+mlUpdateFrequency = performanceMode ? 3 : 1  // Update every 3 bars in performance mode, every bar otherwise
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+// ⚡ PERFORMANCE OPTIMIZATIONS APPLIED (To Fix 40-Second Timeout)
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+//
+// 1. REDUCED ML PARAMETERS:
+//    • neighborsCount: 8 → 5 (max 100 → 20)
+//    • maxBarsBack: 2000 → 300 (max 5000 → 1000)
+//    • maxZones: 10 → 5 (max 50 → 15)
+//
+// 2. OPTIMIZED KNN ALGORITHM:
+//    • Historical buffer: 500 → 150 bars
+//    • Step sampling: Every 2nd bar instead of every bar
+//    • Early termination: Stop when 3x neighbors found
+//    • Insertion sort: Replaced O(n²) bubble sort
+//
+// 3. CONDITIONAL CALCULATIONS:
+//    • ML predictions: Every 3 bars in performance mode
+//    • Zone updates: Every 2 bars in performance mode
+//    • Feature count: Reduced from 5→4, 4→3, 3→2 based on volatility
+//
+// 4. SIMPLIFIED FEATURE ENGINEERING:
+//    • ATR MA period: 50 → 20 bars
+//    • Reduced complexity in adaptive calculations
+//
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // FEATURE ENGINEERING SETTINGS
@@ -56,7 +86,7 @@ cciLength = input.int(20, title="CCI Length", minval=2, group="Features")
 zoneLookback = input.int(20, "Zone Lookback", minval=5, maxval=100, group="Zones")
 zoneStrength = input.float(0.1, "Zone Strength", minval=0.01, maxval=1.0, step=0.01, group="Zones")
 showZones = input.bool(true, "Show Zones", group="Zones")
-maxZones = input.int(10, "Max Zones", minval=1, maxval=50, group="Zones")
+maxZones = input.int(5, "Max Zones", minval=1, maxval=15, group="Zones")  // Reduced from 10 to 5, max from 50 to 15 for performance
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ZERO-LAG SETTINGS
@@ -376,16 +406,17 @@ getFeatureVector(index) =>
 
 // Dynamic feature count based on market volatility
 getOptimalFeatureCount() =>
+    // Simplified feature count for better performance
     atr = ta.atr(14)
-    atrMA = ta.sma(atr, 50)
-    volatilityRatio = atr / atrMA
+    atrMA = ta.sma(atr, 20)  // Reduced from 50 to 20 for faster calculation
+    volatilityRatio = atrMA > 0 ? atr / atrMA : 1.0
     
     if volatilityRatio > 1.5
-        5  // High volatility - use all features
+        4  // Reduced from 5 to 4 features for performance
     else if volatilityRatio > 1.2
-        4  // Medium volatility
+        3  // Medium volatility
     else
-        3  // Low volatility - use core features only
+        2  // Reduced from 3 to 2 for low volatility
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 //  ENHANCED LORENTZIAN DISTANCE CALCULATION
@@ -445,19 +476,21 @@ type Neighbor
     int index
     float confidence
 
-// Enhanced KNN with confidence scoring
+// Enhanced KNN with confidence scoring - PERFORMANCE OPTIMIZED
 findKNearestNeighbors(currentFeatures, k) =>
     var Neighbor[] neighbors = array.new<Neighbor>()
     array.clear(neighbors)
     
     weights = calculateFeatureWeights()
-    // Limit lookback to prevent historical buffer overflow
-    // Pine Script typically has ~640 bar historical limit
-    maxHistoricalBuffer = 500  // Conservative limit to avoid buffer issues
+    // Aggressive performance optimization - reduce historical lookback
+    maxHistoricalBuffer = 150  // Reduced from 500 to 150 for better performance
     maxLookback = math.min(math.min(maxBarsBack, maxHistoricalBuffer), bar_index)
     
-    // Search through historical data
-    for i = 1 to maxLookback
+    // Use step sampling for better performance (every 2nd bar instead of every bar)
+    stepSize = 2
+    
+    // Search through historical data with optimized sampling
+    for i = stepSize to maxLookback by stepSize
         if i < bar_index and i + 1 < bar_index  // Ensure we don't exceed buffer when accessing i+1
             historicalFeatures = getFeatureVector(i)
             distance = lorentzianDistance(currentFeatures, historicalFeatures, weights)
@@ -477,16 +510,23 @@ findKNearestNeighbors(currentFeatures, k) =>
             
             neighbor = Neighbor.new(distance, direction, i, confidence)
             array.push(neighbors, neighbor)
+            
+            // Early termination if we have enough good neighbors
+            if array.size(neighbors) >= k * 3  // Collect 3x more than needed for better selection
+                break
     
-    // Sort by distance (ascending)
+    // Simplified sorting - use insertion sort for small arrays (better performance)
     if array.size(neighbors) > 1
-        for i = 0 to array.size(neighbors) - 2
-            for j = i + 1 to array.size(neighbors) - 1
-                ni = array.get(neighbors, i)
-                nj = array.get(neighbors, j)
-                if ni.distance > nj.distance
-                    array.set(neighbors, i, nj)
-                    array.set(neighbors, j, ni)
+        for i = 1 to array.size(neighbors) - 1
+            current = array.get(neighbors, i)
+            j = i - 1
+            while j >= 0
+                prev = array.get(neighbors, j)
+                if prev.distance <= current.distance
+                    break
+                array.set(neighbors, j + 1, prev)
+                j -= 1
+            array.set(neighbors, j + 1, current)
     
     // Return top k neighbors
     var Neighbor[] kNeighbors = array.new<Neighbor>()
@@ -572,7 +612,10 @@ var float lcPrediction = 0.0
 var float lcConfidence = 0.0
 var int lcSignal = 0
 
-if bar_index > maxBarsBack / 10  // Ensure enough historical data
+// PERFORMANCE OPTIMIZATION: Only calculate ML predictions when needed
+shouldCalculateML = performanceMode ? (bar_index % mlUpdateFrequency == 0) : true
+
+if bar_index > maxBarsBack / 10 and shouldCalculateML  // Ensure enough historical data and performance optimization
     currentFeatures = getFeatureVector(0)
     optimalK = getOptimalNeighborCount()
     neighbors = findKNearestNeighbors(currentFeatures, optimalK)
@@ -1437,8 +1480,11 @@ updateZones() =>
             
             array.set(demandZones, i, zone)
 
-// Update zones on each bar
-updateZones()
+// Update zones on each bar - PERFORMANCE OPTIMIZED
+// In performance mode, update zones less frequently
+shouldUpdateZones = performanceMode ? (bar_index % 2 == 0) : true
+if shouldUpdateZones
+    updateZones()
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ZONE ANALYSIS AND SCORING
