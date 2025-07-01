@@ -1958,6 +1958,9 @@ getEnhancedCombinedSignal() =>
 
 finalEnhancedSignal = getEnhancedCombinedSignal()
 
+// Calculate final signal strength for shape sizing and other uses
+finalSignalStrength = math.abs(finalEnhancedSignal)
+
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // ZERO-LAG PERFORMANCE METRICS
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -2141,8 +2144,8 @@ buySignalShapeSize = buySignal ? (finalSignalStrength > 0.7 ? size.large : final
 sellSignalShapeSize = sellSignal ? (finalSignalStrength > 0.7 ? size.large : finalSignalStrength > 0.4 ? size.normal : size.small) : na
 
 // Plot enhanced signals with different markers
-plotshape(buySignal, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=buySignalShapeSize)
-plotshape(sellSignal, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=sellSignalShapeSize)
+plotshape(buySignal, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=buySignalShapeSize) // ✅ Global scope
+plotshape(sellSignal, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=sellSignalShapeSize) // ✅ Global scope
 
 // Additional signal layers for analysis
 plotshape(adaptiveZLSignal == 1 and not buySignal, title="ZL Buy", style=shape.diamond, location=location.belowbar, color=getBullishColor("weak"), size=size.tiny)
@@ -2366,7 +2369,6 @@ if barstate.islast and showTables
     table.cell(enhancedIndicatorsTable, 2, 8, weightText, bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     
     // Final signal strength
-    finalSignalStrength = math.abs(finalEnhancedSignal)
     table.cell(enhancedIndicatorsTable, 0, 9, "Final Signal", bgcolor=getNeutralColor("background"), text_color=color.white, text_size=size.small)
     finalColor = finalSignalStrength > 0.8 ? color.new(color.lime, 60) : finalSignalStrength > 0.6 ? color.new(color.green, 80) : finalSignalStrength > 0.3 ? color.new(color.yellow, 80) : color.new(color.gray, 80)
     table.cell(enhancedIndicatorsTable, 1, 9, str.tostring(math.round(finalSignalStrength * 100, 0)) + "%", bgcolor=finalColor, text_color=color.white, text_size=size.small)
@@ -2628,7 +2630,6 @@ getRiskOverride() =>
 // Final signal processing with comprehensive risk management
 riskAllowsTrading = getRiskOverride()
 timeBasedExit = getTimeBasedExit()
-finalSignalStrength = math.abs(finalEnhancedSignal)
 
 // Calculate position size with advanced risk management
 advancedPositionSize = getAdvancedPositionSize(finalSignalStrength, currentTrendStrength)
