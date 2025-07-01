@@ -2154,13 +2154,18 @@ getSignalColor(signal, strength) =>
 // ENHANCED SIGNAL VISUALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Advanced signal shapes with dynamic sizing - Direct plotshape calls in global scope
-buySignalShapeSize = buySignal ? (finalSignalStrength > 0.7 ? size.large : finalSignalStrength > 0.4 ? size.normal : size.small) : na
-sellSignalShapeSize = sellSignal ? (finalSignalStrength > 0.7 ? size.large : finalSignalStrength > 0.4 ? size.normal : size.small) : na
+// Advanced signal shapes with dynamic sizing - Multiple plotshape calls for Pine Script v6 compatibility
+// Strong signals (large size)
+plotshape(buySignal and finalSignalStrength > 0.7, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=size.large)
+plotshape(sellSignal and finalSignalStrength > 0.7, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=size.large)
 
-// Plot enhanced signals with different markers
-plotshape(buySignal, title="Strong Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("strong"), size=buySignalShapeSize) // ✅ Global scope
-plotshape(sellSignal, title="Strong Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("strong"), size=sellSignalShapeSize) // ✅ Global scope
+// Medium signals (normal size)
+plotshape(buySignal and finalSignalStrength > 0.4 and finalSignalStrength <= 0.7, title="Medium Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("moderate"), size=size.normal)
+plotshape(sellSignal and finalSignalStrength > 0.4 and finalSignalStrength <= 0.7, title="Medium Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("moderate"), size=size.normal)
+
+// Weak signals (small size)
+plotshape(buySignal and finalSignalStrength <= 0.4, title="Weak Buy", style=shape.triangleup, location=location.belowbar, color=getBullishColor("weak"), size=size.small)
+plotshape(sellSignal and finalSignalStrength <= 0.4, title="Weak Sell", style=shape.triangledown, location=location.abovebar, color=getBearishColor("weak"), size=size.small)
 
 // Additional signal layers for analysis
 plotshape(adaptiveZLSignal == 1 and not buySignal, title="ZL Buy", style=shape.diamond, location=location.belowbar, color=getBullishColor("weak"), size=size.tiny)
