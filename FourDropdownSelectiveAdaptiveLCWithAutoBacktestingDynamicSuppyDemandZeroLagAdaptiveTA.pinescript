@@ -164,8 +164,8 @@ calcADX(length) =>
     adx = ta.rma(dx, length)
     adx
 
-adxValue = calcADX(adxLength)  // ✅ Pine Script v6 compatible
-adxFeature = ml.n_adx(high, low, close, adxLength)
+adxValue = calcADX(adxLength)  // Raw ADX calculation
+adxFeature = ml.n_adx(high, low, close, adxLength)  // ML-normalized ADX feature
 
 // Volume Feature (normalized)
 volumeFeature = normalize(volume, 20)
@@ -573,7 +573,7 @@ kernelEnhancedPrediction() =>
     else if kernelType == "Periodic"
         kernels.periodic(lcPrediction, 5, 1.0, 1.0)
     else if kernelType == "Locally Periodic"
-        kernels.locallyPeriodic(lcPrediction, 5, 1.0, 1.0, 1.0)
+        kernels.locallyPeriodic(lcPrediction, 5, 1.0, 1.0)
     else
         lcPrediction
 
