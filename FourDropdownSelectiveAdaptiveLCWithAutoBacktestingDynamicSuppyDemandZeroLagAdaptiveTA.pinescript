@@ -767,72 +767,67 @@ if bar_index == 0
 // REAL-TIME PERFORMANCE CALCULATION
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Calculate performance metrics in real-time
-updatePerformanceMetrics() =>
-    if strategy.equity > 0 and initialEquity > 0
-        // Update high water mark
-        if strategy.equity > highWaterMark
-            highWaterMark := strategy.equity
+// Update high water mark outside of function
+if strategy.equity > 0 and initialEquity > 0
+    if strategy.equity > highWaterMark
+        highWaterMark := strategy.equity
+    
+    // Calculate current return
+    totalReturn = (strategy.equity - initialEquity) / initialEquity
+    currentMetrics.totalReturn := totalReturn
+    
+    // Track returns for volatility calculation
+    if bar_index > 0
+        dailyReturn = (strategy.equity - strategy.equity[1]) / strategy.equity[1]
+        array.push(returns, dailyReturn)
         
-        // Calculate current return
-        totalReturn = (strategy.equity - initialEquity) / initialEquity
-        currentMetrics.totalReturn := totalReturn
-        
-        // Track returns for volatility calculation
-        if bar_index > 0
-            dailyReturn = (strategy.equity - strategy.equity[1]) / strategy.equity[1]
-            array.push(returns, dailyReturn)
-            
-            // Keep only last 252 returns (1 year for daily data)
-            if array.size(returns) > 252
-                array.shift(returns)
-        
-        // Calculate drawdown
-        currentDrawdown = (strategy.equity - highWaterMark) / highWaterMark
-        array.push(drawdowns, currentDrawdown)
-        if array.size(drawdowns) > 252
-            array.shift(drawdowns)
-        
-        // Update max drawdown
-        if currentDrawdown < currentMetrics.maxDrawdown
-            currentMetrics.maxDrawdown := currentDrawdown
-        
-        // Calculate volatility (annualized)
-        if array.size(returns) > 30
-            avgReturn = array.avg(returns)
-            variance = 0.0
-            for i = 0 to array.size(returns) - 1
-                ret = array.get(returns, i)
-                variance += math.pow(ret - avgReturn, 2)
-            variance := variance / array.size(returns)
-            currentMetrics.volatility := math.sqrt(variance) * math.sqrt(252)  // Annualized
-        
-        // Calculate Sharpe ratio (assuming 2% risk-free rate)
-        riskFreeRate = 0.02
-        if currentMetrics.volatility > 0
-            currentMetrics.sharpeRatio := (totalReturn - riskFreeRate) / currentMetrics.volatility
-        
-        // Calculate Calmar ratio
-        if math.abs(currentMetrics.maxDrawdown) > 0
-            currentMetrics.calmarRatio := totalReturn / math.abs(currentMetrics.maxDrawdown)
-        
-        // Calculate Sortino ratio (downside deviation)
-        if array.size(returns) > 30
-            avgReturn = array.avg(returns)
-            downsideVariance = 0.0
-            downsideCount = 0
-            for i = 0 to array.size(returns) - 1
-                ret = array.get(returns, i)
-                if ret < 0
-                    downsideVariance += math.pow(ret, 2)
-                    downsideCount += 1
-            if downsideCount > 0
-                downsideDeviation = math.sqrt(downsideVariance / downsideCount) * math.sqrt(252)
-                if downsideDeviation > 0
-                    currentMetrics.sortinoRatio := (totalReturn - riskFreeRate) / downsideDeviation
-
-// Update metrics on each bar
-updatePerformanceMetrics()
+        // Keep only last 252 returns (1 year for daily data)
+        if array.size(returns) > 252
+            array.shift(returns)
+    
+    // Calculate drawdown
+    currentDrawdown = (strategy.equity - highWaterMark) / highWaterMark
+    array.push(drawdowns, currentDrawdown)
+    if array.size(drawdowns) > 252
+        array.shift(drawdowns)
+    
+    // Update max drawdown
+    if currentDrawdown < currentMetrics.maxDrawdown
+        currentMetrics.maxDrawdown := currentDrawdown
+    
+    // Calculate volatility (annualized)
+    if array.size(returns) > 30
+        avgReturn = array.avg(returns)
+        variance = 0.0
+        for i = 0 to array.size(returns) - 1
+            ret = array.get(returns, i)
+            variance += math.pow(ret - avgReturn, 2)
+        variance := variance / array.size(returns)
+        currentMetrics.volatility := math.sqrt(variance) * math.sqrt(252)  // Annualized
+    
+    // Calculate Sharpe ratio (assuming 2% risk-free rate)
+    riskFreeRate = 0.02
+    if currentMetrics.volatility > 0
+        currentMetrics.sharpeRatio := (totalReturn - riskFreeRate) / currentMetrics.volatility
+    
+    // Calculate Calmar ratio
+    if math.abs(currentMetrics.maxDrawdown) > 0
+        currentMetrics.calmarRatio := totalReturn / math.abs(currentMetrics.maxDrawdown)
+    
+    // Calculate Sortino ratio (downside deviation)
+    if array.size(returns) > 30
+        avgReturn = array.avg(returns)
+        downsideVariance = 0.0
+        downsideCount = 0
+        for i = 0 to array.size(returns) - 1
+            ret = array.get(returns, i)
+            if ret < 0
+                downsideVariance += math.pow(ret, 2)
+                downsideCount += 1
+        if downsideCount > 0
+            downsideDeviation = math.sqrt(downsideVariance / downsideCount) * math.sqrt(252)
+            if downsideDeviation > 0
+                currentMetrics.sortinoRatio := (totalReturn - riskFreeRate) / downsideDeviation
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // TRADE ANALYSIS SYSTEM
