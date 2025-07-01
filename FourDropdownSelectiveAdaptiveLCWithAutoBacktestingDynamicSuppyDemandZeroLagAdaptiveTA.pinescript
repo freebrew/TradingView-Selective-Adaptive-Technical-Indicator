@@ -586,9 +586,8 @@ makePrediction(neighbors) =>
     prediction = totalWeight > 0 ? weightedSum / totalWeight : 0
     confidence = totalConfidence / array.size(neighbors)
     
-    // Convert to discrete signal with threshold - ULTRA HIGH QUALITY ONLY
-    confidenceThreshold = 0.95  // CRITICAL FIX: Increased from 0.85 to 0.95 for ultra high quality signals only
-    signal = confidence > confidenceThreshold ? (prediction > 0.8 ? 1 : (prediction < -0.8 ? -1 : 0)) : 0  // CRITICAL FIX: Increased thresholds from ±0.5 to ±0.8
+    // Convert to discrete signal with ADAPTIVE threshold based on performance
+    signal = confidence > adaptiveConfidenceThreshold ? (prediction > 0.8 ? 1 : (prediction < -0.8 ? -1 : 0)) : 0  // Use adaptive confidence threshold
     
     [signal, confidence]
 
@@ -717,9 +716,8 @@ combinedSignal = getCombinedSignal()
 // CONFIDENCE-BASED SIGNAL FILTERING
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Only trade when confidence is high enough - ULTRA HIGH THRESHOLD
-minConfidenceThreshold = 0.95  // CRITICAL FIX: Increased from 0.9 to 0.95 for ultra high quality signals only
-highConfidenceSignal = lcConfidence > minConfidenceThreshold ? combinedSignal : 0
+// Only trade when confidence is high enough - ADAPTIVE THRESHOLD
+highConfidenceSignal = lcConfidence > adaptiveMinConfidenceThreshold ? combinedSignal : 0
 
 // Signal strength indicator
 getSignalStrength() =>
@@ -757,13 +755,17 @@ shouldExit() =>
 // ENHANCED SIGNAL GENERATION (Replacing Phase 1 basic signals)
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-// Enhanced buy/sell signals using LC predictions - ULTRA STRICT FILTERING
-// Multiple confirmation filters for highest quality trades only
-// Enhanced trend filter with directional confirmation (using saved computation)
+// ZERO-LAG ADAPTIVE TREND SYSTEM
+adaptiveT3Trend = getAdaptiveT3(close, adaptiveT3Length, t3Factor)
+zeroLagRSI = adaptiveZeroLagRSI(close, rsiLength)
+adaptiveTrendStrength = getAdaptiveTrendStrength()
+
+// Enhanced trend filter with zero-lag adaptive indicators
 trendFilter = adxValue > 35  // Strong trend requirement
-trendDirection = ta.ema(close, 20) > ta.ema(close, 50)  // Trend direction confirmation
-trendAcceleration = ta.ema(close, 10) > ta.ema(close, 20)  // Trend acceleration
-enhancedTrendFilter = trendFilter and (trendDirection == trendAcceleration)  // Trend must be consistent
+trendDirection = adaptiveT3Trend > adaptiveT3Trend[1]  // Zero-lag trend direction
+trendAcceleration = zeroLagRSI > 50 and zeroLagRSI < 50[5]  // Zero-lag momentum confirmation
+adaptiveTrendConfirmation = adaptiveTrendStrength > 0.6  // Adaptive trend strength
+enhancedTrendFilter = trendFilter and trendDirection and trendAcceleration and adaptiveTrendConfirmation
 volumeFilter = volume > ta.sma(volume, 20) * 2.0  // Strong volume confirmation (increased from 1.2x to 2.0x)
 volatilityFilter = ta.atr(14) > ta.sma(ta.atr(14), 50) * 1.3  // Higher volatility for better moves
 // Enhanced momentum filter with multiple timeframes (using saved computation)
@@ -781,13 +783,48 @@ strongMTFSell = signal5m < 0 and signal30m < 0 and signal1h < 0 and signal4h < 0
 allTimeframesAgree = strongMTFBuy or strongMTFSell  // At least one direction must have all timeframes aligned
 rsiFilter = ta.rsi(close, 14) > 20 and ta.rsi(close, 14) < 80  // Avoid RSI extremes
 
-// ULTRA STRICT SIGNAL GENERATION - All enhanced filters must pass
-lcBuySignal = highConfidenceSignal == 1 and strongMTFBuy and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter and rsiFilter and allTimeframesAgree
-lcSellSignal = highConfidenceSignal == -1 and strongMTFSell and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter and rsiFilter and allTimeframesAgree
+// ZONE-FIRST APPROACH: Primary filtering based on supply/demand zones
+nearHighStrengthDemandZone = not na(strongestDemand) and strongestDemand.isActive and strongestDemand.strength > 0.8 and math.abs(close - strongestDemand.topPrice) / close < 0.005  // Within 0.5%
+nearHighStrengthSupplyZone = not na(strongestSupply) and strongestSupply.isActive and strongestSupply.strength > 0.8 and math.abs(close - strongestSupply.bottomPrice) / close < 0.005  // Within 0.5%
+
+// PERFORMANCE-BASED ADAPTIVE THRESHOLDS
+var float adaptiveConfidenceThreshold = 0.95
+var float adaptiveMinConfidenceThreshold = 0.95
+var int performanceCheckBars = 100
+
+// Adapt thresholds based on recent performance (every 100 bars)
+if bar_index % performanceCheckBars == 0 and currentMetrics.totalTrades > 5
+    recentWinRate = currentMetrics.winRate
+    if recentWinRate < 0.3  // If win rate < 30%, increase thresholds dramatically
+        adaptiveConfidenceThreshold := math.min(0.99, adaptiveConfidenceThreshold + 0.02)
+        adaptiveMinConfidenceThreshold := math.min(0.99, adaptiveMinConfidenceThreshold + 0.02)
+    else if recentWinRate > 0.7  // If win rate > 70%, slightly relax thresholds
+        adaptiveConfidenceThreshold := math.max(0.90, adaptiveConfidenceThreshold - 0.01)
+        adaptiveMinConfidenceThreshold := math.max(0.90, adaptiveMinConfidenceThreshold - 0.01)
+
+// DRAWDOWN-BASED CIRCUIT BREAKER
+drawdownCircuitBreaker = currentMetrics.maxDrawdown < -0.15  // Stop trading if drawdown > 15%
+
+// ULTRA STRICT ZONE-BASED SIGNAL GENERATION
+lcBuySignal = not drawdownCircuitBreaker and highConfidenceSignal == 1 and strongMTFBuy and nearHighStrengthDemandZone and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter and rsiFilter and allTimeframesAgree and lcConfidence > adaptiveConfidenceThreshold
+lcSellSignal = not drawdownCircuitBreaker and highConfidenceSignal == -1 and strongMTFSell and nearHighStrengthSupplyZone and enhancedTrendFilter and volumeFilter and volatilityFilter and momentumFilter and rsiFilter and allTimeframesAgree and lcConfidence > adaptiveConfidenceThreshold
 
 // ANTI-OVERTRADING FILTER - Limit trade frequency
 var int lastTradeBar = 0
-minBarsBetweenTrades = 200  // CRITICAL FIX: Minimum 200 bars between trades (about 16+ hours on 5min chart) to prevent overtrading
+// AUTO-OPTIMIZATION: Adaptive bars between trades based on performance
+var int baseMinBars = 200
+var int adaptiveMinBars = 200
+
+// Adjust trade frequency based on recent performance
+if bar_index % performanceCheckBars == 0 and currentMetrics.totalTrades > 3
+    if currentMetrics.winRate < 0.4  // Poor performance - increase spacing dramatically
+        adaptiveMinBars := math.min(500, baseMinBars * 2)  // Double the spacing
+    else if currentMetrics.winRate > 0.7  // Good performance - slightly reduce spacing
+        adaptiveMinBars := math.max(100, baseMinBars * 0.8)  // Reduce by 20%
+    else
+        adaptiveMinBars := baseMinBars  // Keep base spacing
+
+minBarsBetweenTrades = adaptiveMinBars  // Use adaptive spacing
 tradeFrequencyFilter = bar_index - lastTradeBar >= minBarsBetweenTrades
 
 // Update last trade bar when we have a signal
@@ -822,6 +859,23 @@ if barstate.islast and showTables
     
     table.cell(perfTable, 0, 11, "Combined Signal", bgcolor=color.new(color.gray, 80), text_color=color.white, text_size=size.small)
     table.cell(perfTable, 1, 11, signalToText(combinedSignal), bgcolor=signalColor(combinedSignal), text_color=color.white, text_size=size.small)
+    
+    // ADAPTIVE SYSTEM MONITORING
+    table.cell(perfTable, 0, 12, "Adaptive Confidence", bgcolor=color.new(color.blue, 80), text_color=color.white, text_size=size.small)
+    table.cell(perfTable, 1, 12, str.tostring(math.round(adaptiveConfidenceThreshold * 100, 1)) + "%", bgcolor=color.new(color.blue, 80), text_color=color.white, text_size=size.small)
+    
+    table.cell(perfTable, 0, 13, "Adaptive Min Bars", bgcolor=color.new(color.blue, 80), text_color=color.white, text_size=size.small)
+    table.cell(perfTable, 1, 13, str.tostring(adaptiveMinBars), bgcolor=color.new(color.blue, 80), text_color=color.white, text_size=size.small)
+    
+    table.cell(perfTable, 0, 14, "Zone Requirement", bgcolor=color.new(color.purple, 80), text_color=color.white, text_size=size.small)
+    zoneStatus = (nearHighStrengthDemandZone or nearHighStrengthSupplyZone) ? "ACTIVE" : "WAITING"
+    zoneColor = (nearHighStrengthDemandZone or nearHighStrengthSupplyZone) ? color.new(color.green, 80) : color.new(color.red, 80)
+    table.cell(perfTable, 1, 14, zoneStatus, bgcolor=zoneColor, text_color=color.white, text_size=size.small)
+    
+    table.cell(perfTable, 0, 15, "Circuit Breaker", bgcolor=color.new(color.orange, 80), text_color=color.white, text_size=size.small)
+    breakerStatus = drawdownCircuitBreaker ? "ACTIVE" : "OFF"
+    breakerColor = drawdownCircuitBreaker ? color.new(color.red, 80) : color.new(color.green, 80)
+    table.cell(perfTable, 1, 15, breakerStatus, bgcolor=breakerColor, text_color=color.white, text_size=size.small)
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // PHASE 2 COMPLETE - ENHANCED LC & ML CORE ESTABLISHED
