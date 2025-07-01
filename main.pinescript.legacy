@@ -1,0 +1,655 @@
+//@version=6
+strategy("Four Dropdown Technical Indicator Strategy", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500)
+
+// ====== PRESET SELECTION ======
+presetGroup = "Strategy Presets"
+preset = input.string("Default", "Strategy Preset", options=["Default", "Optimal Performance", "Breakout", "Reversal", "Trend Dominator"], tooltip="Select a pre-configured set of optimized parameters", group=presetGroup)
+
+// ====== INDICATOR SELECTION DROPDOWNS ======
+
+// === Trending Indicators Settings ===
+trendingGroup = "Trending Indicator Settings"
+trendingType = input.string("MACD → (Leading)", "Trending Indicator", options=["SMA → (Leading)", "EMA → (Leading)", "MACD → (Leading)", "ADX ← (Lagging)", "Parabolic SAR ← (Lagging)"], group=trendingGroup)
+
+// Initialize trend parameters with default values
+var int trendsLength = 14
+var int trendsFast = 12
+var int trendsSlow = 26
+var int trendsSignal = 9
+
+// === Volatility Indicators Settings ===
+volatilityGroup = "Volatility Indicator Settings"
+volatilityType = input.string("Bollinger Bands → (Leading)", "Volatility Indicator", options=["Bollinger Bands → (Leading)", "ATR → (Leading)", "Keltner Channel → (Leading)", "Standard Deviation ← (Lagging)", "Chaikin Volatility ← (Lagging)"], group=volatilityGroup)
+
+// Initialize volatility parameters with default values
+var int volLength = 20
+var float volMultiplier = 2.0
+
+// === Momentum Indicators Settings ===
+momentumGroup = "Momentum Indicator Settings"
+momentumType = input.string("RSI → (Leading)", "Momentum Indicator", options=["RSI → (Leading)", "Stochastic → (Leading)", "CCI → (Leading)", "Williams %R ← (Lagging)", "MACD Histogram ← (Lagging)"], group=momentumGroup)
+
+// Initialize momentum parameters with default values
+var int momLength = 14
+var int momOverBought = 70
+var int momOverSold = 30
+
+// === Volume Indicators Settings ===
+volumeGroup = "Volume Indicator Settings"
+volumeType = input.string("OBV → (Leading)", "Volume Indicator", options=["OBV → (Leading)", "MFI → (Leading)", "Chaikin Money Flow → (Leading)", "Volume Oscillator ← (Lagging)", "A/D Line ← (Lagging)"], group=volumeGroup)
+
+// Initialize volume parameters with default values
+var int volPeriod = 14
+
+// Update parameters based on selected preset
+if barstate.isfirst
+    if preset == "Optimal Performance"
+        trendsFast := 12
+        trendsSlow := 26
+        trendsSignal := 9
+        volLength := 20
+        volMultiplier := 2.0
+        momLength := 14
+        momOverBought := 70
+        momOverSold := 30
+        volPeriod := 14
+    else if preset == "Breakout"
+        trendsFast := 8
+        trendsSlow := 21
+        trendsSignal := 7
+        volLength := 15
+        volMultiplier := 2.5
+        momLength := 10
+        momOverBought := 65
+        momOverSold := 35
+        volPeriod := 10
+    else if preset == "Reversal"
+        trendsFast := 6
+        trendsSlow := 19
+        trendsSignal := 5
+        volLength := 25
+        volMultiplier := 1.8
+        momLength := 16
+        momOverBought := 75
+        momOverSold := 25
+        volPeriod := 16
+    else if preset == "Trend Dominator"
+        trendsFast := 15
+        trendsSlow := 30
+        trendsSignal := 10
+        volLength := 30
+        volMultiplier := 2.2
+        momLength := 12
+        momOverBought := 68
+        momOverSold := 32
+        volPeriod := 12
+
+// Add preset description to the performance table
+var string preset_description = ""
+if preset == "Optimal Performance"
+    preset_description := "Balanced settings for consistent performance"
+else if preset == "Breakout"
+    preset_description := "Optimized for catching market breakouts"
+else if preset == "Reversal"
+    preset_description := "Tuned for identifying trend reversals"
+else if preset == "Trend Dominator"
+    preset_description := "Maximized for strong trend following"
+else
+    preset_description := "Default strategy settings"
+
+// === Signal and Risk Management Settings ===
+signalGroup = "Signal and Risk Management"
+signalStrategy = input.string("All Agree", "Signal Combination Strategy", options=["All Agree", "Majority Vote", "Custom Threshold"], group=signalGroup)
+customThreshold = input.int(3, "Custom Threshold (1-4)", minval=1, maxval=4, tooltip="Number of indicators required to agree for a signal (only used with Custom Threshold selection)", group=signalGroup)
+useTrailingStop = input.bool(false, "Use Trailing Stop-Loss", group=signalGroup)
+stopLossPercent = input.float(2.0, "Stop Loss (%)", minval=0.1, step=0.1, tooltip="Stop loss percentage below/above entry for long/short positions", group=signalGroup)
+takeProfitPercent = input.float(5.0, "Take Profit (%)", minval=0.1, step=0.1, tooltip="Take profit percentage above/below entry for long/short positions", group=signalGroup)
+
+// === Order Limiting Settings ===
+orderGroup = "Order Limiting"
+maxTradesPerDay = input.int(1, "Max Trades Per Day", minval=0, tooltip="Maximum number of trades allowed per day (0 = unlimited)", group=orderGroup)
+
+// ====== MULTI-TIMEFRAME SIGNAL VARIABLES ======
+var float trending_5min = na
+var float volatility_5min = na
+var float momentum_5min = na
+var float volume_5min = na
+var float combined_5min = na
+
+var float trending_30min = na
+var float volatility_30min = na
+var float momentum_30min = na
+var float volume_30min = na
+var float combined_30min = na
+
+var float trending_1h = na
+var float volatility_1h = na
+var float momentum_1h = na
+var float volume_1h = na
+var float combined_1h = na
+
+var float trending_4h = na
+var float volatility_4h = na
+var float momentum_4h = na
+var float volume_4h = na
+var float combined_4h = na
+
+// ====== CALCULATE TRENDING INDICATORS ======
+
+// Simple Moving Average (SMA)
+sma_value = ta.sma(close, trendsLength)
+sma_signal = close > sma_value ? 1 : close < sma_value ? -1 : 0
+
+// Exponential Moving Average (EMA)
+ema_value = ta.ema(close, trendsLength)
+ema_signal = close > ema_value ? 1 : close < ema_value ? -1 : 0
+
+// MACD
+[macd_line, macd_signal, macd_hist] = ta.macd(close, 12, 26, 9)
+macd_buy_signal = macd_line > macd_signal ? 1 : macd_line < macd_signal ? -1 : 0
+
+// ADX (Custom Implementation)
+// Calculate True Range
+tr = math.max(high - low, math.abs(high - close[1]), math.abs(low - close[1]))
+
+// Calculate +DM and -DM
+plusDM = high - high[1] > low[1] - low ? math.max(high - high[1], 0) : 0
+minusDM = low[1] - low > high - high[1] ? math.max(low[1] - low, 0) : 0
+
+// Smooth the values using Wilder's smoothing technique
+trSmoothed = ta.rma(tr, trendsLength)
+plusDMSmoothed = ta.rma(plusDM, trendsLength)
+minusDMSmoothed = ta.rma(minusDM, trendsLength)
+
+// Calculate the +DI and -DI values
+plusDI = 100 * plusDMSmoothed / trSmoothed
+minusDI = 100 * minusDMSmoothed / trSmoothed
+
+// Calculate the DX value
+dx = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+
+// Calculate ADX as an RMA of DX
+adx_value = ta.rma(dx, trendsLength)
+
+// Get the +DI and -DI values for signal generation
+dip = plusDI
+dim = minusDI
+adx_signal = adx_value > 25 and dip > dim ? 1 : adx_value > 25 and dip < dim ? -1 : 0
+
+// Parabolic SAR
+psar = ta.sar(0.02, 0.02, 0.2)
+psar_signal = close > psar ? 1 : close < psar ? -1 : 0
+
+// Determine selected trending indicator signal
+trending_signal = trendingType == "SMA → (Leading)" ? sma_signal : trendingType == "EMA → (Leading)" ? ema_signal : trendingType == "MACD → (Leading)" ? macd_buy_signal : trendingType == "ADX ← (Lagging)" ? adx_signal : trendingType == "Parabolic SAR ← (Lagging)" ? psar_signal : 0
+
+// ====== CALCULATE VOLATILITY INDICATORS ======
+
+// Bollinger Bands
+[bbMiddle, bbUpper, bbLower] = ta.bb(close, 20, 2.0)
+bb_signal = close > bbUpper ? 1 : close < bbLower ? -1 : 0
+
+// Average True Range (ATR)
+atr_value = ta.atr(20)
+atr_signal = ta.crossover(close, close[1] + atr_value) ? 1 : ta.crossunder(close, close[1] - atr_value) ? -1 : 0
+
+// Keltner Channel
+kc_middle = ta.ema(close, 20)
+kc_upper = kc_middle + ta.atr(20) * 2.0
+kc_lower = kc_middle - ta.atr(20) * 2.0
+kc_signal = close > kc_upper ? 1 : close < kc_lower ? -1 : 0
+
+// Standard Deviation
+std_dev = ta.stdev(close, volLength)
+std_signal = ta.crossover(std_dev, ta.sma(std_dev, volLength)) ? 1 : ta.crossunder(std_dev, ta.sma(std_dev, volLength)) ? -1 : 0
+
+// Chaikin Volatility
+chaikinVol = ta.change(ta.ema(high - low, 20), 20)
+chaikinVol_signal = ta.crossover(chaikinVol, 0) ? 1 : ta.crossunder(chaikinVol, 0) ? -1 : 0
+
+// Determine selected volatility indicator signal
+volatility_signal = volatilityType == "Bollinger Bands → (Leading)" ? bb_signal : volatilityType == "ATR → (Leading)" ? atr_signal : volatilityType == "Keltner Channel → (Leading)" ? kc_signal : volatilityType == "Standard Deviation ← (Lagging)" ? std_signal : volatilityType == "Chaikin Volatility ← (Lagging)" ? chaikinVol_signal : 0
+
+// ====== CALCULATE MOMENTUM INDICATORS ======
+
+// RSI
+rsi_value = ta.rsi(close, 14)
+rsi_signal = rsi_value < momOverSold ? 1 : rsi_value > momOverBought ? -1 : 0
+
+// Stochastic - Custom Implementation
+highest_high = ta.highest(high, momLength)
+lowest_low = ta.lowest(low, momLength)
+stoch_k = 100 * (close - lowest_low) / (highest_high - lowest_low)
+stoch_d = ta.sma(stoch_k, 3)
+stoch_signal = stoch_k < momOverSold and stoch_k > stoch_d ? 1 : stoch_k > momOverBought and stoch_k < stoch_d ? -1 : 0
+
+// CCI
+cci_value = ta.cci(close, momLength)
+cci_signal = cci_value < -100 ? 1 : cci_value > 100 ? -1 : 0
+
+// Williams %R
+williams_r = ta.wpr(momLength)
+williams_signal = williams_r < -80 ? 1 : williams_r > -20 ? -1 : 0
+
+// MACD Histogram (already calculated above)
+macd_hist_signal = macd_hist > 0 and macd_hist > macd_hist[1] ? 1 : macd_hist < 0 and macd_hist < macd_hist[1] ? -1 : 0
+
+// Determine selected momentum indicator signal
+momentum_signal = momentumType == "RSI → (Leading)" ? rsi_signal : momentumType == "Stochastic → (Leading)" ? stoch_signal : momentumType == "CCI → (Leading)" ? cci_signal : momentumType == "Williams %R ← (Lagging)" ? williams_signal : momentumType == "MACD Histogram ← (Lagging)" ? macd_hist_signal : 0
+
+// ====== CALCULATE VOLUME INDICATORS ======
+
+// On-Balance Volume (OBV)
+obv_value = ta.obv
+obv_signal = ta.crossover(obv_value, ta.sma(obv_value, volPeriod)) ? 1 : ta.crossunder(obv_value, ta.sma(obv_value, volPeriod)) ? -1 : 0
+
+// Money Flow Index (MFI)
+mfi_value = ta.mfi(hlc3, volPeriod)
+mfi_signal = mfi_value < 20 ? 1 : mfi_value > 80 ? -1 : 0
+
+// Chaikin Money Flow
+// Custom CMF implementation
+moneyFlowMultiplier = ((close - low) - (high - close)) / (high - low)
+moneyFlowVolume = moneyFlowMultiplier * volume
+cmf_value = ta.sma(moneyFlowVolume, volPeriod) / ta.sma(volume, volPeriod)
+cmf_signal = cmf_value > 0.05 ? 1 : cmf_value < -0.05 ? -1 : 0
+
+// Volume Oscillator
+volume_ema_fast = ta.ema(volume, 12)
+volume_ema_slow = ta.ema(volume, 26)
+vo_value = 100 * (volume_ema_fast - volume_ema_slow) / volume_ema_slow
+vo_signal = ta.crossover(vo_value, 0) ? 1 : ta.crossunder(vo_value, 0) ? -1 : 0
+
+// A/D Line (Accumulation/Distribution)
+ad_value = ta.accdist
+ad_signal = ta.crossover(ad_value, ta.sma(ad_value, volPeriod)) ? 1 : ta.crossunder(ad_value, ta.sma(ad_value, volPeriod)) ? -1 : 0
+
+// Determine selected volume indicator signal
+volume_signal = volumeType == "OBV → (Leading)" ? obv_signal : volumeType == "MFI → (Leading)" ? mfi_signal : volumeType == "Chaikin Money Flow → (Leading)" ? cmf_signal : volumeType == "Volume Oscillator ← (Lagging)" ? vo_signal : volumeType == "A/D Line ← (Lagging)" ? ad_signal : 0
+
+// ====== SIGNAL COMBINATION STRATEGY ======
+
+// Count positive and negative signals
+positive_signals = math.abs(trending_signal == 1 ? 1 : 0) + math.abs(volatility_signal == 1 ? 1 : 0) + math.abs(momentum_signal == 1 ? 1 : 0) + math.abs(volume_signal == 1 ? 1 : 0)
+negative_signals = math.abs(trending_signal == -1 ? 1 : 0) + math.abs(volatility_signal == -1 ? 1 : 0) + math.abs(momentum_signal == -1 ? 1 : 0) + math.abs(volume_signal == -1 ? 1 : 0)
+
+// Determine final signal based on the combination strategy
+var int final_signal = 0
+var int lastTradeDay = 0
+var int tradesExecutedToday = 0
+
+if signalStrategy == "All Agree"
+    final_signal := positive_signals >= 4 ? 1 : negative_signals >= 4 ? -1 : 0
+else if signalStrategy == "Majority Vote"
+    final_signal := positive_signals > negative_signals and positive_signals >= 3 ? 1 : negative_signals > positive_signals and negative_signals >= 3 ? -1 : 0
+else // Custom Threshold
+    final_signal := positive_signals >= customThreshold ? 1 : negative_signals >= customThreshold ? -1 : 0
+
+// ====== TRADE EXECUTION ======
+
+// Strategy parameters
+strategy.risk.max_drawdown(value=15, type=strategy.percent_of_equity)
+
+// Order limiting parameters
+dayOfMonth = dayofmonth(time("D"))
+
+// Reset trade counter at the start of a new day
+if dayOfMonth != lastTradeDay
+    tradesExecutedToday := 0
+    lastTradeDay := dayOfMonth
+
+// Entry conditions - with trade limiting logic
+tradeAllowed = maxTradesPerDay == 0 or tradesExecutedToday < maxTradesPerDay
+
+// Calculate stop loss and take profit levels for long positions
+longStopPrice = strategy.position_avg_price * (1 - stopLossPercent / 100)
+longTakeProfitPrice = strategy.position_avg_price * (1 + takeProfitPercent / 100)
+
+// Calculate stop loss and take profit levels for short positions
+shortStopPrice = strategy.position_avg_price * (1 + stopLossPercent / 100)
+shortTakeProfitPrice = strategy.position_avg_price * (1 - takeProfitPercent / 100)
+
+// Long Entry
+if final_signal == 1 and strategy.position_size <= 0 and tradeAllowed
+    strategy.entry("Long", strategy.long, comment="Long Entry")
+    tradesExecutedToday := tradesExecutedToday + 1
+    
+    if useTrailingStop
+        strategy.exit("Long TP/TS", "Long", trail_points=math.round(close * stopLossPercent / 100), trail_offset=0, profit=math.round(close * takeProfitPercent / 100))
+    else
+        strategy.exit("Long TP/SL", "Long", stop=math.round(close * (1 - stopLossPercent / 100)), limit=math.round(close * (1 + takeProfitPercent / 100)))
+
+// Short Entry
+if final_signal == -1 and strategy.position_size >= 0 and tradeAllowed
+    strategy.entry("Short", strategy.short, comment="Short Entry")
+    tradesExecutedToday := tradesExecutedToday + 1
+    
+    if useTrailingStop
+        strategy.exit("Short TP/TS", "Short", trail_points=math.round(close * stopLossPercent / 100), trail_offset=0, profit=math.round(close * takeProfitPercent / 100))
+    else
+        strategy.exit("Short TP/SL", "Short", stop=math.round(close * (1 + stopLossPercent / 100)), limit=math.round(close * (1 - takeProfitPercent / 100)))
+
+// Force exit positions if signal reverses
+if strategy.position_size > 0 and final_signal == -1
+    strategy.close("Long", comment="Signal Reversal")
+if strategy.position_size < 0 and final_signal == 1
+    strategy.close("Short", comment="Signal Reversal")
+
+// ====== VISUALIZATIONS ======
+
+// Plot pivot points and signal markers
+plotshape(series=final_signal == 1 and final_signal[1] != 1, title="Buy Signal", location=location.belowbar, style=shape.triangleup, color=color.new(color.green, 0), size=size.small)
+plotshape(final_signal == -1 and final_signal[1] != -1, title="Sell Signal", location=location.abovebar, style=shape.triangledown, color=color.new(color.red, 0), size=size.small)
+
+// Table creation for indicator values across timeframes
+var table indicatorTable = table.new(position.bottom_right, 6, 6, border_width=1)
+var table performanceTable = table.new(position.bottom_left, 2, 11, border_width=1)
+
+// Track last trade info
+var string lastTradeAction = "None"
+var string lastTradeTime = na
+
+// Update last trade info when opening or closing a position
+if strategy.position_size > strategy.position_size[1] and strategy.position_size > 0
+    lastTradeAction := "Buy Entry"
+    lastTradeTime := str.format("{0,date,yyyy-MM-dd HH:mm}", time)
+else if strategy.position_size < strategy.position_size[1] and strategy.position_size < 0
+    lastTradeAction := "Sell Entry"
+    lastTradeTime := str.format("{0,date,yyyy-MM-dd HH:mm}", time)
+else if strategy.position_size == 0 and strategy.position_size[1] > 0
+    lastTradeAction := "Long Exit"
+    lastTradeTime := str.format("{0,date,yyyy-MM-dd HH:mm}", time)
+else if strategy.position_size == 0 and strategy.position_size[1] < 0
+    lastTradeAction := "Short Exit"
+    lastTradeTime := str.format("{0,date,yyyy-MM-dd HH:mm}", time)
+
+// Update the table every bar
+if barstate.islast
+    // Headers
+    table.cell(indicatorTable, 0, 0, "Timeframe", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 0, "Current", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 0, "5min", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 0, "30min", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 0, "1h", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 0, "4h", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    
+    // Indicator names
+    table.cell(indicatorTable, 0, 1, trendingType, bgcolor=color.new(color.gray, 40))
+    table.cell(indicatorTable, 0, 2, volatilityType, bgcolor=color.new(color.gray, 40))
+    table.cell(indicatorTable, 0, 3, momentumType, bgcolor=color.new(color.gray, 40))
+    table.cell(indicatorTable, 0, 4, volumeType, bgcolor=color.new(color.gray, 40))
+    table.cell(indicatorTable, 0, 5, "Combined", bgcolor=color.new(color.gray, 40))
+    
+    // Current timeframe signals
+    table.cell(indicatorTable, 1, 1, str.tostring(trending_signal), bgcolor=trending_signal == 1 ? color.new(color.green, 40) : trending_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 1, 2, str.tostring(volatility_signal), bgcolor=volatility_signal == 1 ? color.new(color.green, 40) : volatility_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 1, 3, str.tostring(momentum_signal), bgcolor=momentum_signal == 1 ? color.new(color.green, 40) : momentum_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 1, 4, str.tostring(volume_signal), bgcolor=volume_signal == 1 ? color.new(color.green, 40) : volume_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 1, 5, str.tostring(final_signal), bgcolor=final_signal == 1 ? color.new(color.green, 40) : final_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+
+    // 5-minute timeframe signals
+    table.cell(indicatorTable, 2, 1, str.tostring(trending_5min), bgcolor=trending_5min == 1 ? color.new(color.green, 40) : trending_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 2, 2, str.tostring(volatility_5min), bgcolor=volatility_5min == 1 ? color.new(color.green, 40) : volatility_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 2, 3, str.tostring(momentum_5min), bgcolor=momentum_5min == 1 ? color.new(color.green, 40) : momentum_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 2, 4, str.tostring(volume_5min), bgcolor=volume_5min == 1 ? color.new(color.green, 40) : volume_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 2, 5, str.tostring(combined_5min), bgcolor=combined_5min == 1 ? color.new(color.green, 40) : combined_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+
+    // 30-minute timeframe signals
+    table.cell(indicatorTable, 3, 1, str.tostring(trending_30min), bgcolor=trending_30min == 1 ? color.new(color.green, 40) : trending_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 3, 2, str.tostring(volatility_30min), bgcolor=volatility_30min == 1 ? color.new(color.green, 40) : volatility_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 3, 3, str.tostring(momentum_30min), bgcolor=momentum_30min == 1 ? color.new(color.green, 40) : momentum_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 3, 4, str.tostring(volume_30min), bgcolor=volume_30min == 1 ? color.new(color.green, 40) : volume_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 3, 5, str.tostring(combined_30min), bgcolor=combined_30min == 1 ? color.new(color.green, 40) : combined_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+
+    // 1-hour timeframe signals
+    table.cell(indicatorTable, 4, 1, str.tostring(trending_1h), bgcolor=trending_1h == 1 ? color.new(color.green, 40) : trending_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 4, 2, str.tostring(volatility_1h), bgcolor=volatility_1h == 1 ? color.new(color.green, 40) : volatility_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 4, 3, str.tostring(momentum_1h), bgcolor=momentum_1h == 1 ? color.new(color.green, 40) : momentum_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 4, 4, str.tostring(volume_1h), bgcolor=volume_1h == 1 ? color.new(color.green, 40) : volume_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 4, 5, str.tostring(combined_1h), bgcolor=combined_1h == 1 ? color.new(color.green, 40) : combined_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+
+    // 4-hour timeframe signals
+    table.cell(indicatorTable, 5, 1, str.tostring(trending_4h), bgcolor=trending_4h == 1 ? color.new(color.green, 40) : trending_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 5, 2, str.tostring(volatility_4h), bgcolor=volatility_4h == 1 ? color.new(color.green, 40) : volatility_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 5, 3, str.tostring(momentum_4h), bgcolor=momentum_4h == 1 ? color.new(color.green, 40) : momentum_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 5, 4, str.tostring(volume_4h), bgcolor=volume_4h == 1 ? color.new(color.green, 40) : volume_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(indicatorTable, 5, 5, str.tostring(combined_4h), bgcolor=combined_4h == 1 ? color.new(color.green, 40) : combined_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40))
+
+// Performance metrics table
+if barstate.islast
+    // Headers
+    table.cell(performanceTable, 0, 0, "Performance Metrics", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 0, "Value", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    
+    // Add preset information at the top
+    table.cell(performanceTable, 0, 1, "Active Preset", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 1, preset, bgcolor=color.new(color.gray, 40))
+    
+    table.cell(performanceTable, 0, 2, "Preset Description", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 2, preset_description, bgcolor=color.new(color.gray, 40))
+    
+    // Existing metrics
+    table.cell(performanceTable, 0, 3, "Net Profit", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 3, str.tostring(strategy.netprofit, "#.##") + " (" + str.tostring(strategy.netprofit / strategy.initial_capital * 100, "#.##") + "%)", bgcolor=color.new(color.gray, 40))
+    
+    table.cell(performanceTable, 0, 4, "Win Rate", bgcolor=color.new(color.gray, 40))
+    win_rate = strategy.wintrades / strategy.closedtrades * 100
+    table.cell(performanceTable, 1, 4, str.tostring(win_rate, "#.##") + "%", bgcolor=color.new(color.gray, 40))
+    
+    table.cell(performanceTable, 0, 5, "Max Drawdown", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 5, str.tostring(strategy.max_drawdown, "#.##") + " (" + str.tostring(strategy.max_drawdown_percent, "#.##") + "%)", bgcolor=color.new(color.gray, 40))
+    
+    table.cell(performanceTable, 0, 6, "Profit Factor", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 6, str.tostring(strategy.grossprofit / math.abs(strategy.grossloss), "#.##"), bgcolor=color.new(color.gray, 40))
+    
+    table.cell(performanceTable, 0, 7, "Total Trades", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 7, str.tostring(strategy.closedtrades), bgcolor=color.new(color.gray, 40))
+    
+    table.cell(performanceTable, 0, 8, "Avg Trade", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 8, str.tostring(strategy.netprofit / strategy.closedtrades, "#.##"), bgcolor=color.new(color.gray, 40))
+    
+    // Add last trade information
+    table.cell(performanceTable, 0, 9, "Last Signal", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 9, lastTradeAction, bgcolor=color.new(color.gray, 40))
+    
+    table.cell(performanceTable, 0, 10, "Signal Time", bgcolor=color.new(color.gray, 40))
+    table.cell(performanceTable, 1, 10, lastTradeTime, bgcolor=color.new(color.gray, 40))
+
+// Set up alert conditions
+alertcondition(final_signal == 1 and final_signal[1] != 1, title="Buy Signal Alert", message="A buy signal has been generated by the strategy")
+alertcondition(final_signal == -1 and final_signal[1] != -1, title="Sell Signal Alert", message="A sell signal has been generated by the strategy")
+
+// Function to calculate trending indicator signal for any timeframe
+method trendingSignalMTF(string tf) => 
+    var float trendingSignal = 0.0
+    if trendingType == "SMA → (Leading)"
+        [c, smaValue] = request.security(syminfo.tickerid, tf, [close, ta.sma(close, trendsLength)])
+        trendingSignal := close > smaValue ? 1 : close < smaValue ? -1 : 0
+    else if trendingType == "EMA → (Leading)"
+        [c, emaValue] = request.security(syminfo.tickerid, tf, [close, ta.ema(close, trendsLength)])
+        trendingSignal := close > emaValue ? 1 : close < emaValue ? -1 : 0
+    else if trendingType == "MACD → (Leading)"
+        [macdLine, macdSignal, _] = request.security(syminfo.tickerid, tf, ta.macd(close, 12, 26, 9))
+        trendingSignal := macdLine > macdSignal ? 1 : macdLine < macdSignal ? -1 : 0
+    else if trendingType == "ADX ← (Lagging)"
+        [adx, plusDI, minusDI] = request.security(syminfo.tickerid, tf, [ta.rma(dx, trendsLength), plusDI, minusDI])
+        trendingSignal := adx > 25 and plusDI > minusDI ? 1 : adx > 25 and plusDI < minusDI ? -1 : 0
+    else if trendingType == "Parabolic SAR ← (Lagging)"
+        [c, psar] = request.security(syminfo.tickerid, tf, [close, ta.sar(0.02, 0.02, 0.2)])
+        trendingSignal := c > psar ? 1 : c < psar ? -1 : 0
+    trendingSignal
+
+method volatilitySignalMTF(string tf) =>
+    var float volatilitySignal = 0.0
+    if volatilityType == "Bollinger Bands → (Leading)"
+        basis = request.security(syminfo.tickerid, tf, ta.sma(close, 20))
+        dev = request.security(syminfo.tickerid, tf, ta.stdev(close, 20))
+        upper = basis + dev * 2.0
+        lower = basis - dev * 2.0
+        c = request.security(syminfo.tickerid, tf, close)
+        volatilitySignal := c > upper ? 1 : c < lower ? -1 : 0
+    else if volatilityType == "ATR → (Leading)"
+        [c, prevClose, atr] = request.security(syminfo.tickerid, tf, [close, close[1], ta.atr(20)])
+        volatilitySignal := ta.crossover(c, prevClose + atr) ? 1 : ta.crossunder(c, prevClose - atr) ? -1 : 0
+    else if volatilityType == "Keltner Channel → (Leading)"
+        [c, ema, atr] = request.security(syminfo.tickerid, tf, [close, ta.ema(close, 20), ta.atr(20)])
+        kcUpper = ema + atr * 2.0
+        kcLower = ema - atr * 2.0
+        volatilitySignal := c > kcUpper ? 1 : c < kcLower ? -1 : 0
+    else if volatilityType == "Standard Deviation ← (Lagging)"
+        [stdDev, stdSma] = request.security(syminfo.tickerid, tf, [ta.stdev(close, volLength), ta.sma(ta.stdev(close, volLength), volLength)])
+        volatilitySignal := ta.crossover(stdDev, stdSma) ? 1 : ta.crossunder(stdDev, stdSma) ? -1 : 0
+    else if volatilityType == "Chaikin Volatility ← (Lagging)"
+        chaikinVol = request.security(syminfo.tickerid, tf, ta.change(ta.ema(high - low, 20), 20))
+        volatilitySignal := ta.crossover(chaikinVol, 0) ? 1 : ta.crossunder(chaikinVol, 0) ? -1 : 0
+    volatilitySignal
+
+method momentumSignalMTF(string tf) =>
+    var float momentumSignal = 0.0
+    if momentumType == "RSI → (Leading)"
+        rsi = request.security(syminfo.tickerid, tf, ta.rsi(close, 14))
+        momentumSignal := rsi < momOverSold ? 1 : rsi > momOverBought ? -1 : 0
+    else if momentumType == "Stochastic → (Leading)"
+        [c, h, l] = request.security(syminfo.tickerid, tf, [close, ta.highest(high, momLength), ta.lowest(low, momLength)])
+        stochK = 100 * (c - l) / (h - l)
+        stochD = ta.sma(stochK, 3)
+        momentumSignal := stochK < momOverSold and stochK > stochD ? 1 : stochK > momOverBought and stochK < stochD ? -1 : 0
+    else if momentumType == "CCI → (Leading)"
+        cci = request.security(syminfo.tickerid, tf, ta.cci(close, momLength))
+        momentumSignal := cci < -100 ? 1 : cci > 100 ? -1 : 0
+    else if momentumType == "Williams %R ← (Lagging)"
+        williams = request.security(syminfo.tickerid, tf, ta.wpr(momLength))
+        momentumSignal := williams < -80 ? 1 : williams > -20 ? -1 : 0
+    else if momentumType == "MACD Histogram ← (Lagging)"
+        [_, _, macdHist] = request.security(syminfo.tickerid, tf, ta.macd(close, 12, 26, 9))
+        momentumSignal := macdHist > 0 and macdHist > macdHist[1] ? 1 : macdHist < 0 and macdHist < macdHist[1] ? -1 : 0
+    momentumSignal
+
+method volumeSignalMTF(string tf) =>
+    var float volumeSignal = 0.0
+    if volumeType == "OBV → (Leading)"
+        [obv, obvSma] = request.security(syminfo.tickerid, tf, [ta.obv, ta.sma(ta.obv, volPeriod)])
+        volumeSignal := ta.crossover(obv, obvSma) ? 1 : ta.crossunder(obv, obvSma) ? -1 : 0
+    else if volumeType == "MFI → (Leading)"
+        mfi = request.security(syminfo.tickerid, tf, ta.mfi(hlc3, volPeriod))
+        volumeSignal := mfi < 20 ? 1 : mfi > 80 ? -1 : 0
+    else if volumeType == "Chaikin Money Flow → (Leading)"
+        [c, h, l, v] = request.security(syminfo.tickerid, tf, [close, high, low, volume])
+        moneyFlowMultiplier = ((c - l) - (h - c)) / (h - l)
+        moneyFlowVolume = moneyFlowMultiplier * v
+        cmf = ta.sma(moneyFlowVolume, volPeriod) / ta.sma(v, volPeriod)
+        volumeSignal := cmf > 0.05 ? 1 : cmf < -0.05 ? -1 : 0
+    else if volumeType == "Volume Oscillator ← (Lagging)"
+        [vFast, vSlow] = request.security(syminfo.tickerid, tf, [ta.ema(volume, 12), ta.ema(volume, 26)])
+        vo = 100 * (vFast - vSlow) / vSlow
+        volumeSignal := ta.crossover(vo, 0) ? 1 : ta.crossunder(vo, 0) ? -1 : 0
+    else if volumeType == "A/D Line ← (Lagging)"
+        [ad, adSma] = request.security(syminfo.tickerid, tf, [ta.accdist, ta.sma(ta.accdist, volPeriod)])
+        volumeSignal := ta.crossover(ad, adSma) ? 1 : ta.crossunder(ad, adSma) ? -1 : 0
+    volumeSignal
+
+// Function to calculate combined signal for any timeframe
+method combinedSignalMTF(float trending, float volatility, float momentum, float volume) =>
+    var float final = 0.0
+    positiveSignals = (trending == 1 ? 1 : 0) + (volatility == 1 ? 1 : 0) + (momentum == 1 ? 1 : 0) + (volume == 1 ? 1 : 0)
+    negativeSignals = (trending == -1 ? 1 : 0) + (volatility == -1 ? 1 : 0) + (momentum == -1 ? 1 : 0) + (volume == -1 ? 1 : 0)
+    if signalStrategy == "All Agree"
+        final := positiveSignals == 4 ? 1 : negativeSignals == 4 ? -1 : 0
+    else if signalStrategy == "Majority Vote"
+        final := positiveSignals > negativeSignals ? 1 : negativeSignals > positiveSignals ? -1 : 0
+    else
+        final := positiveSignals >= customThreshold ? 1 : negativeSignals >= customThreshold ? -1 : 0
+    final
+
+// Get signals for each timeframe
+trending_5min := trendingSignalMTF("5")
+volatility_5min := volatilitySignalMTF("5")
+momentum_5min := momentumSignalMTF("5")
+volume_5min := volumeSignalMTF("5")
+combined_5min := combinedSignalMTF(trending_5min, volatility_5min, momentum_5min, volume_5min)
+
+trending_30min := trendingSignalMTF("30")
+volatility_30min := volatilitySignalMTF("30")
+momentum_30min := momentumSignalMTF("30")
+volume_30min := volumeSignalMTF("30")
+combined_30min := combinedSignalMTF(trending_30min, volatility_30min, momentum_30min, volume_30min)
+
+trending_1h := trendingSignalMTF("60")
+volatility_1h := volatilitySignalMTF("60")
+momentum_1h := momentumSignalMTF("60")
+volume_1h := volumeSignalMTF("60")
+combined_1h := combinedSignalMTF(trending_1h, volatility_1h, momentum_1h, volume_1h)
+
+trending_4h := trendingSignalMTF("240")
+volatility_4h := volatilitySignalMTF("240")
+momentum_4h := momentumSignalMTF("240")
+volume_4h := volumeSignalMTF("240")
+combined_4h := combinedSignalMTF(trending_4h, volatility_4h, momentum_4h, volume_4h)
+
+// Plot Trending Indicator - Global Scope
+plot(trendingType == "MACD → (Leading)" ? macd_line : na, "MACD Line", color=color.blue)
+plot(trendingType == "MACD → (Leading)" ? macd_signal : na, "MACD Signal", color=color.orange)
+plot(trendingType == "MACD → (Leading)" ? macd_hist : na, "MACD Histogram", color=macd_hist >= 0 ? color.green : color.red, style=plot.style_histogram)
+
+plot(trendingType == "SMA → (Leading)" ? sma_value : na, "SMA", color=color.blue, linewidth=2)
+plot(trendingType == "SMA → (Leading)" ? close : na, "Price", color=color.gray)
+
+plot(trendingType == "EMA → (Leading)" ? ema_value : na, "EMA", color=color.blue, linewidth=2)
+plot(trendingType == "EMA → (Leading)" ? close : na, "Price", color=color.gray)
+
+plot(trendingType == "ADX ← (Lagging)" ? adx_value : na, "ADX", color=color.blue)
+plot(trendingType == "ADX ← (Lagging)" ? plusDI : na, "+DI", color=color.green)
+plot(trendingType == "ADX ← (Lagging)" ? minusDI : na, "-DI", color=color.red)
+
+plot(trendingType == "Parabolic SAR ← (Lagging)" ? psar : na, "SAR", style=plot.style_cross, color=color.blue)
+
+// Plot Volatility Indicator - Global Scope
+plot(volatilityType == "Bollinger Bands → (Leading)" ? bbMiddle : na, "BB Middle", color=color.blue)
+plot(volatilityType == "Bollinger Bands → (Leading)" ? bbUpper : na, "BB Upper", color=color.green)
+plot(volatilityType == "Bollinger Bands → (Leading)" ? bbLower : na, "BB Lower", color=color.red)
+
+plot(volatilityType == "ATR → (Leading)" ? atr_value : na, "ATR", color=color.blue)
+
+plot(volatilityType == "Keltner Channel → (Leading)" ? kc_middle : na, "KC Middle", color=color.blue)
+plot(volatilityType == "Keltner Channel → (Leading)" ? kc_upper : na, "KC Upper", color=color.green)
+plot(volatilityType == "Keltner Channel → (Leading)" ? kc_lower : na, "KC Lower", color=color.red)
+
+plot(volatilityType == "Standard Deviation ← (Lagging)" ? std_dev : na, "StdDev", color=color.blue)
+plot(volatilityType == "Chaikin Volatility ← (Lagging)" ? chaikinVol : na, "Chaikin Vol", color=color.blue)
+
+// Plot Momentum Indicator - Global Scope
+hline(70, "RSI Overbought", color=color.red, linestyle=hline.style_dashed)
+hline(30, "RSI Oversold", color=color.green, linestyle=hline.style_dashed)
+plot(momentumType == "RSI → (Leading)" ? rsi_value : na, "RSI", color=color.blue)
+
+hline(80, "Stoch Overbought", color=color.red, linestyle=hline.style_dashed)
+hline(20, "Stoch Oversold", color=color.green, linestyle=hline.style_dashed)
+plot(momentumType == "Stochastic → (Leading)" ? stoch_k : na, "Stoch %K", color=color.blue)
+plot(momentumType == "Stochastic → (Leading)" ? stoch_d : na, "Stoch %D", color=color.orange)
+
+hline(100, "CCI Upper", color=color.red, linestyle=hline.style_dashed)
+hline(-100, "CCI Lower", color=color.green, linestyle=hline.style_dashed)
+plot(momentumType == "CCI → (Leading)" ? cci_value : na, "CCI", color=color.blue)
+
+hline(-20, "Williams Upper", color=color.red, linestyle=hline.style_dashed)
+hline(-80, "Williams Lower", color=color.green, linestyle=hline.style_dashed)
+plot(momentumType == "Williams %R ← (Lagging)" ? williams_r : na, "Williams %R", color=color.blue)
+
+plot(momentumType == "MACD Histogram ← (Lagging)" ? macd_hist : na, "MACD Hist", color=macd_hist >= 0 ? color.green : color.red, style=plot.style_histogram)
+
+// Plot Volume Indicator - Global Scope
+plot(volumeType == "OBV → (Leading)" ? obv_value : na, "OBV", color=color.blue)
+plot(volumeType == "OBV → (Leading)" ? ta.sma(obv_value, volPeriod) : na, "OBV MA", color=color.orange)
+
+hline(80, "MFI Overbought", color=color.red, linestyle=hline.style_dashed)
+hline(20, "MFI Oversold", color=color.green, linestyle=hline.style_dashed)
+plot(volumeType == "MFI → (Leading)" ? mfi_value : na, "MFI", color=color.blue)
+
+hline(0.05, "CMF Upper", color=color.red, linestyle=hline.style_dashed)
+hline(-0.05, "CMF Lower", color=color.green, linestyle=hline.style_dashed)
+plot(volumeType == "Chaikin Money Flow → (Leading)" ? cmf_value : na, "CMF", color=color.blue)
+
+plot(volumeType == "Volume Oscillator ← (Lagging)" ? vo_value : na, "Vol Osc", color=vo_value >= 0 ? color.green : color.red, style=plot.style_histogram)
+
+plot(volumeType == "A/D Line ← (Lagging)" ? ad_value : na, "A/D Line", color=color.blue)
+plot(volumeType == "A/D Line ← (Lagging)" ? ta.sma(ad_value, volPeriod) : na, "A/D MA", color=color.orange) 
