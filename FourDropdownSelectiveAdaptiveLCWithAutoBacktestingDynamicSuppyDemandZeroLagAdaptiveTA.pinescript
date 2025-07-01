@@ -1486,7 +1486,7 @@ zoneSignalModifier = getZoneSignalModifier()
 
 // Zone-based entry enhancement
 getZoneEnhancedSignal(baseSignal) =>
-    enhancedSignal = baseSignal
+    float enhancedSignal = baseSignal
     
     // Long signal enhancement at demand zones
     if baseSignal > 0 and not na(strongestDemand) and strongestDemand.isActive
@@ -1961,7 +1961,7 @@ getEnhancedCombinedSignal() =>
         trendConfirmation := 0.2  // 20% bonus for signal agreement
     
     // Combined enhanced signal
-    enhancedSignal = baseSignal + zlEnhancement + trendConfirmation
+    float enhancedSignal = baseSignal + zlEnhancement + trendConfirmation
     
     // Apply final thresholds
     if enhancedSignal > 0.6
