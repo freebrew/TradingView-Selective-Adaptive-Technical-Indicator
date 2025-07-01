@@ -177,11 +177,11 @@ volumeFeature = normalize(volume, 20)
 // Get kernel function based on selection
 getKernel(src, lookback) =>
     switch kernelType
-        "Rational Quadratic" => kernels.rationalQuadratic(src, lookback, 1.0, 1.0)
-        "Gaussian" => kernels.gaussian(src, lookback, 1.0)
-        "Periodic" => kernels.periodic(src, lookback, 1.0, 1.0)
-        "Locally Periodic" => kernels.locallyPeriodic(src, lookback, 1.0, 1.0)
-        => kernels.rationalQuadratic(src, lookback, 1.0, 1.0)
+        "Rational Quadratic" => kernels.rationalQuadratic(src, lookback, 1, 1)
+        "Gaussian" => kernels.gaussian(src, lookback, 1)
+        "Periodic" => kernels.periodic(src, lookback, 1, 1)
+        "Locally Periodic" => kernels.locallyPeriodic(src, lookback, 1, 1)
+        => kernels.rationalQuadratic(src, lookback, 1, 1)
 
 // Apply kernel smoothing to price data
 kernelSmoothed = getKernel(close, 20)
@@ -337,7 +337,7 @@ getFeatureVector(index) =>
     array.clear(features)
     
     // Feature 1: Normalized RSI with kernel enhancement
-    f1 = kernelType == "Gaussian" ? kernels.gaussian(rsiFeature[index], 10, 1.0) : rsiFeature[index]
+    f1 = kernelType == "Gaussian" ? kernels.gaussian(rsiFeature[index], 10, 1) : rsiFeature[index]
     array.push(features, f1)
     
     // Feature 2: Normalized CCI with adaptive smoothing
@@ -567,13 +567,13 @@ if bar_index > maxBarsBack / 10  // Ensure enough historical data
 // Apply kernel smoothing to predictions for stability
 kernelEnhancedPrediction() =>
     if kernelType == "Rational Quadratic"
-        kernels.rationalQuadratic(lcPrediction, 5, 1.0, 1.0)
+        kernels.rationalQuadratic(lcPrediction, 5, 1, 1)
     else if kernelType == "Gaussian"
-        kernels.gaussian(lcPrediction, 5, 1.0)
+        kernels.gaussian(lcPrediction, 5, 1)
     else if kernelType == "Periodic"
-        kernels.periodic(lcPrediction, 5, 1.0, 1.0)
+        kernels.periodic(lcPrediction, 5, 1, 1)
     else if kernelType == "Locally Periodic"
-        kernels.locallyPeriodic(lcPrediction, 5, 1.0, 1.0)
+        kernels.locallyPeriodic(lcPrediction, 5, 1, 1)
     else
         lcPrediction
 
@@ -2452,9 +2452,9 @@ var int lastTradeDate = 0
 // Calculate current risk metrics (moved to global scope for Pine Script v6 compliance)
 // Update equity tracking
 if strategy.equity > peakEquity
-    peakEquity := strategy.equity
+    peakEquity := strategy.equity      // ✅ Global scope modification allowed
+currentEquity := strategy.equity       // ✅ Global scope modification allowed
 
-currentEquity := strategy.equity
 currentDrawdown := (peakEquity - currentEquity) / peakEquity * 100
 
 // Daily P&L tracking
