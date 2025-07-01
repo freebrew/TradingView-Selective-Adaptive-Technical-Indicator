@@ -770,7 +770,7 @@ if bar_index == 0
 // Update high water mark outside of function
 if strategy.equity > 0 and initialEquity > 0
     if strategy.equity > highWaterMark
-        highWaterMark := strategy.equity
+        highWaterMark := strategy.equity  // ✅ Global variable updated in main scope
     
     // Calculate current return
     totalReturn = (strategy.equity - initialEquity) / initialEquity
@@ -1084,8 +1084,8 @@ optimalPositionSize = optimizationMode == "Kelly Criterion" ? getKellyPositionSi
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
 // Calculate optimized position size
-equity = strategy.equity
-riskAmount = equity * (optimalPositionSize / 100)
+currentEquity = strategy.equity
+riskAmount = currentEquity * (optimalPositionSize / 100)
 stopLossPrice = close * (1 - finalStopLoss / 100)
 optimizedPositionSize = riskAmount / (close - stopLossPrice)
 
