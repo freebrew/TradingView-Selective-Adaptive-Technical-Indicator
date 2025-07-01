@@ -370,67 +370,67 @@ else if strategy.position_size == 0 and strategy.position_size[1] < 0
 // Update the table every bar
 if barstate.islast
     // Headers
-    table.cell(indicatorTable, 0, 0, "Timeframe", bgcolor=color.new(color.blue, 40), text_color=color.white)
-    table.cell(indicatorTable, 1, 0, "Current", bgcolor=color.new(color.blue, 40), text_color=color.white)
-    table.cell(indicatorTable, 2, 0, "5min", bgcolor=color.new(color.blue, 40), text_color=color.white)
-    table.cell(indicatorTable, 3, 0, "30min", bgcolor=color.new(color.blue, 40), text_color=color.white)
-    table.cell(indicatorTable, 4, 0, "1h", bgcolor=color.new(color.blue, 40), text_color=color.white)
-    table.cell(indicatorTable, 5, 0, "4h", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(indicatorTable, 0, 0, "Timeframe", bgcolor=color.blue, text_color=color.white)
+    table.cell(indicatorTable, 1, 0, "Current", bgcolor=color.blue, text_color=color.white)
+    table.cell(indicatorTable, 2, 0, "5min", bgcolor=color.blue, text_color=color.white)
+    table.cell(indicatorTable, 3, 0, "30min", bgcolor=color.blue, text_color=color.white)
+    table.cell(indicatorTable, 4, 0, "1h", bgcolor=color.blue, text_color=color.white)
+    table.cell(indicatorTable, 5, 0, "4h", bgcolor=color.blue, text_color=color.white)
     
     // Indicator names
-    table.cell(indicatorTable, 0, 1, trendingType, bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 0, 2, volatilityType, bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 0, 3, momentumType, bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 0, 4, volumeType, bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 0, 5, "Combined", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 0, 1, trendingType, bgcolor=color.gray, text_color=color.white)
+    table.cell(indicatorTable, 0, 2, volatilityType, bgcolor=color.gray, text_color=color.white)
+    table.cell(indicatorTable, 0, 3, momentumType, bgcolor=color.gray, text_color=color.white)
+    table.cell(indicatorTable, 0, 4, volumeType, bgcolor=color.gray, text_color=color.white)
+    table.cell(indicatorTable, 0, 5, "Combined", bgcolor=color.gray, text_color=color.white)
     
     // Current timeframe signals
-    table.cell(indicatorTable, 1, 1, signalToText(trending_signal), bgcolor=trending_signal == 1 ? color.new(color.green, 40) : trending_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 1, 2, signalToText(volatility_signal), bgcolor=volatility_signal == 1 ? color.new(color.green, 40) : volatility_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 1, 3, signalToText(momentum_signal), bgcolor=momentum_signal == 1 ? color.new(color.green, 40) : momentum_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 1, 4, signalToText(volume_signal), bgcolor=volume_signal == 1 ? color.new(color.green, 40) : volume_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 1, 5, signalToText(final_signal), bgcolor=final_signal == 1 ? color.new(color.green, 40) : final_signal == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 1, 1, signalToText(trending_signal), bgcolor=trending_signal == 1 ? color.green : trending_signal == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 1, 2, signalToText(volatility_signal), bgcolor=volatility_signal == 1 ? color.green : volatility_signal == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 1, 3, signalToText(momentum_signal), bgcolor=momentum_signal == 1 ? color.green : momentum_signal == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 1, 4, signalToText(volume_signal), bgcolor=volume_signal == 1 ? color.green : volume_signal == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 1, 5, signalToText(final_signal), bgcolor=final_signal == 1 ? color.green : final_signal == -1 ? color.red : color.gray, text_color=color.white)
 
     // 5-minute timeframe signals
-    table.cell(indicatorTable, 2, 1, signalToText(trending_5min), bgcolor=trending_5min == 1 ? color.new(color.green, 40) : trending_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 2, 2, signalToText(volatility_5min), bgcolor=volatility_5min == 1 ? color.new(color.green, 40) : volatility_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 2, 3, signalToText(momentum_5min), bgcolor=momentum_5min == 1 ? color.new(color.green, 40) : momentum_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 2, 4, signalToText(volume_5min), bgcolor=volume_5min == 1 ? color.new(color.green, 40) : volume_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 2, 5, signalToText(combined_5min), bgcolor=combined_5min == 1 ? color.new(color.green, 40) : combined_5min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 2, 1, signalToText(trending_5min), bgcolor=trending_5min == 1 ? color.green : trending_5min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 2, 2, signalToText(volatility_5min), bgcolor=volatility_5min == 1 ? color.green : volatility_5min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 2, 3, signalToText(momentum_5min), bgcolor=momentum_5min == 1 ? color.green : momentum_5min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 2, 4, signalToText(volume_5min), bgcolor=volume_5min == 1 ? color.green : volume_5min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 2, 5, signalToText(combined_5min), bgcolor=combined_5min == 1 ? color.green : combined_5min == -1 ? color.red : color.gray, text_color=color.white)
 
     // 30-minute timeframe signals
-    table.cell(indicatorTable, 3, 1, signalToText(trending_30min), bgcolor=trending_30min == 1 ? color.new(color.green, 40) : trending_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 3, 2, signalToText(volatility_30min), bgcolor=volatility_30min == 1 ? color.new(color.green, 40) : volatility_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 3, 3, signalToText(momentum_30min), bgcolor=momentum_30min == 1 ? color.new(color.green, 40) : momentum_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 3, 4, signalToText(volume_30min), bgcolor=volume_30min == 1 ? color.new(color.green, 40) : volume_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 3, 5, signalToText(combined_30min), bgcolor=combined_30min == 1 ? color.new(color.green, 40) : combined_30min == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 3, 1, signalToText(trending_30min), bgcolor=trending_30min == 1 ? color.green : trending_30min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 3, 2, signalToText(volatility_30min), bgcolor=volatility_30min == 1 ? color.green : volatility_30min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 3, 3, signalToText(momentum_30min), bgcolor=momentum_30min == 1 ? color.green : momentum_30min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 3, 4, signalToText(volume_30min), bgcolor=volume_30min == 1 ? color.green : volume_30min == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 3, 5, signalToText(combined_30min), bgcolor=combined_30min == 1 ? color.green : combined_30min == -1 ? color.red : color.gray, text_color=color.white)
 
     // 1-hour timeframe signals
-    table.cell(indicatorTable, 4, 1, signalToText(trending_1h), bgcolor=trending_1h == 1 ? color.new(color.green, 40) : trending_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 4, 2, signalToText(volatility_1h), bgcolor=volatility_1h == 1 ? color.new(color.green, 40) : volatility_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 4, 3, signalToText(momentum_1h), bgcolor=momentum_1h == 1 ? color.new(color.green, 40) : momentum_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 4, 4, signalToText(volume_1h), bgcolor=volume_1h == 1 ? color.new(color.green, 40) : volume_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 4, 5, signalToText(combined_1h), bgcolor=combined_1h == 1 ? color.new(color.green, 40) : combined_1h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 4, 1, signalToText(trending_1h), bgcolor=trending_1h == 1 ? color.green : trending_1h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 4, 2, signalToText(volatility_1h), bgcolor=volatility_1h == 1 ? color.green : volatility_1h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 4, 3, signalToText(momentum_1h), bgcolor=momentum_1h == 1 ? color.green : momentum_1h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 4, 4, signalToText(volume_1h), bgcolor=volume_1h == 1 ? color.green : volume_1h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 4, 5, signalToText(combined_1h), bgcolor=combined_1h == 1 ? color.green : combined_1h == -1 ? color.red : color.gray, text_color=color.white)
 
     // 4-hour timeframe signals
-    table.cell(indicatorTable, 5, 1, signalToText(trending_4h), bgcolor=trending_4h == 1 ? color.new(color.green, 40) : trending_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 5, 2, signalToText(volatility_4h), bgcolor=volatility_4h == 1 ? color.new(color.green, 40) : volatility_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 5, 3, signalToText(momentum_4h), bgcolor=momentum_4h == 1 ? color.new(color.green, 40) : momentum_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 5, 4, signalToText(volume_4h), bgcolor=volume_4h == 1 ? color.new(color.green, 40) : volume_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
-    table.cell(indicatorTable, 5, 5, signalToText(combined_4h), bgcolor=combined_4h == 1 ? color.new(color.green, 40) : combined_4h == -1 ? color.new(color.red, 40) : color.new(color.gray, 40), text_color=color.white)
+    table.cell(indicatorTable, 5, 1, signalToText(trending_4h), bgcolor=trending_4h == 1 ? color.green : trending_4h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 5, 2, signalToText(volatility_4h), bgcolor=volatility_4h == 1 ? color.green : volatility_4h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 5, 3, signalToText(momentum_4h), bgcolor=momentum_4h == 1 ? color.green : momentum_4h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 5, 4, signalToText(volume_4h), bgcolor=volume_4h == 1 ? color.green : volume_4h == -1 ? color.red : color.gray, text_color=color.white)
+    table.cell(indicatorTable, 5, 5, signalToText(combined_4h), bgcolor=combined_4h == 1 ? color.green : combined_4h == -1 ? color.red : color.gray, text_color=color.white)
 
 // Performance metrics table
 if barstate.islast
     // Headers
-    table.cell(performanceTable, 0, 0, "Performance Metrics", bgcolor=color.new(color.blue, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 0, "Value", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(performanceTable, 0, 0, "Performance Metrics", bgcolor=color.blue, text_color=color.white)
+    table.cell(performanceTable, 1, 0, "Value", bgcolor=color.blue, text_color=color.white)
     
     // Add preset information at the top
-    table.cell(performanceTable, 0, 1, "Active Preset", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 1, preset, bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 0, 1, "Active Preset", bgcolor=color.gray, text_color=color.white)
+    table.cell(performanceTable, 1, 1, preset, bgcolor=color.gray, text_color=color.white)
     
-    table.cell(performanceTable, 0, 2, "Preset Description", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 2, preset_description, bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 0, 2, "Preset Description", bgcolor=color.gray, text_color=color.white)
+    table.cell(performanceTable, 1, 2, preset_description, bgcolor=color.gray, text_color=color.white)
     
     // Existing metrics
     table.cell(performanceTable, 0, 3, "Net Profit", bgcolor=color.new(color.gray, 40), text_color=color.white)
