@@ -37,16 +37,16 @@ momOverSold_default = 30
 volPeriod_default = 14
 
 // Optimal Performance Preset
-trendsLength_optimal = 14
-trendsFast_optimal = 12
-trendsSlow_optimal = 26
-trendsSignal_optimal = 9
-volLength_optimal = 20
-volMultiplier_optimal = 2.0
-momLength_optimal = 14
-momOverBought_optimal = 70
-momOverSold_optimal = 30
-volPeriod_optimal = 14
+trendsLength_optimal = 18
+trendsFast_optimal = 10
+trendsSlow_optimal = 28
+trendsSignal_optimal = 8
+volLength_optimal = 22
+volMultiplier_optimal = 2.1
+momLength_optimal = 16
+momOverBought_optimal = 72
+momOverSold_optimal = 28
+volPeriod_optimal = 16
 
 // Breakout Preset
 trendsLength_breakout = 14
@@ -302,13 +302,212 @@ if barstate.islast
     table.cell(debugTable, 0, 5, "Final Signal", bgcolor=color.new(color.orange, 40), text_color=color.white)
     table.cell(debugTable, 1, 5, str.tostring(final_signal), bgcolor=color.new(final_signal == 1 ? color.green : final_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
     table.cell(debugTable, 2, 5, str.tostring(active_signal), bgcolor=color.new(active_signal == 1 ? color.green : active_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
-// ====== DYNAMIC METRICS ======
+// ====== MULTI-PRESET TRADE TRACKING SYSTEM ======
+// Track trades for all 5 presets manually (except active preset uses strategy engine)
+var array<float> default_trades = array.new<float>()
+var array<float> optimal_trades = array.new<float>()
+var array<float> breakout_trades = array.new<float>()
+var array<float> reversal_trades = array.new<float>()
+var array<float> trend_trades = array.new<float>()
+
+var float default_equity = 10000.0
+var float optimal_equity = 10000.0
+var float breakout_equity = 10000.0
+var float reversal_equity = 10000.0
+var float trend_equity = 10000.0
+
+var int default_position = 0  // 0=none, 1=long, -1=short
+var int optimal_position = 0
+var int breakout_position = 0
+var int reversal_position = 0
+var int trend_position = 0
+
+var float default_entry_price = 0.0
+var float optimal_entry_price = 0.0
+var float breakout_entry_price = 0.0
+var float reversal_entry_price = 0.0
+var float trend_entry_price = 0.0
+
+// Track preset trade execution
+f_execute_preset_trade(signal, prev_signal, current_position, entry_price, equity) =>
+    new_position = current_position
+    new_entry_price = entry_price
+    new_equity = equity
+    trade_result = 0.0
+    
+    // Entry logic
+    if signal == 1 and prev_signal != 1 and current_position == 0  // New long entry
+        new_position := 1
+        new_entry_price := close
+    else if signal == -1 and prev_signal != -1 and current_position == 0  // New short entry
+        new_position := -1
+        new_entry_price := close
+    // Exit logic
+    else if signal == -1 and current_position == 1  // Exit long
+        trade_result := (close - entry_price) / entry_price * 100
+        new_equity := equity * (1 + trade_result / 100)
+        new_position := -1  // Enter short
+        new_entry_price := close
+    else if signal == 1 and current_position == -1  // Exit short
+        trade_result := (entry_price - close) / entry_price * 100
+        new_equity := equity * (1 + trade_result / 100)
+        new_position := 1  // Enter long
+        new_entry_price := close
+        
+    result = array.new<float>(4)
+    array.set(result, 0, new_position)
+    array.set(result, 1, new_entry_price)
+    array.set(result, 2, new_equity)
+    array.set(result, 3, trade_result)
+    result
+
+// Execute trades for all presets (except active preset which uses strategy engine)
+if preset != "Default"
+    default_result = f_execute_preset_trade(final_signal_default, final_signal_default[1], default_position, default_entry_price, default_equity)
+    default_position := int(array.get(default_result, 0))
+    default_entry_price := array.get(default_result, 1)
+    default_equity := array.get(default_result, 2)
+    default_trade = array.get(default_result, 3)
+    if default_trade != 0.0
+        array.push(default_trades, default_trade)
+
+if preset != "Optimal Performance"
+    optimal_result = f_execute_preset_trade(final_signal_optimal, final_signal_optimal[1], optimal_position, optimal_entry_price, optimal_equity)
+    optimal_position := int(array.get(optimal_result, 0))
+    optimal_entry_price := array.get(optimal_result, 1)
+    optimal_equity := array.get(optimal_result, 2)
+    optimal_trade = array.get(optimal_result, 3)
+    if optimal_trade != 0.0
+        array.push(optimal_trades, optimal_trade)
+
+if preset != "Breakout"
+    breakout_result = f_execute_preset_trade(final_signal_breakout, final_signal_breakout[1], breakout_position, breakout_entry_price, breakout_equity)
+    breakout_position := int(array.get(breakout_result, 0))
+    breakout_entry_price := array.get(breakout_result, 1)
+    breakout_equity := array.get(breakout_result, 2)
+    breakout_trade = array.get(breakout_result, 3)
+    if breakout_trade != 0.0
+        array.push(breakout_trades, breakout_trade)
+
+if preset != "Reversal"
+    reversal_result = f_execute_preset_trade(final_signal_reversal, final_signal_reversal[1], reversal_position, reversal_entry_price, reversal_equity)
+    reversal_position := int(array.get(reversal_result, 0))
+    reversal_entry_price := array.get(reversal_result, 1)
+    reversal_equity := array.get(reversal_result, 2)
+    reversal_trade = array.get(reversal_result, 3)
+    if reversal_trade != 0.0
+        array.push(reversal_trades, reversal_trade)
+
+if preset != "Trend Dominator"
+    trend_result = f_execute_preset_trade(final_signal_trend, final_signal_trend[1], trend_position, trend_entry_price, trend_equity)
+    trend_position := int(array.get(trend_result, 0))
+    trend_entry_price := array.get(trend_result, 1)
+    trend_equity := array.get(trend_result, 2)
+    trend_trade = array.get(trend_result, 3)
+    if trend_trade != 0.0
+        array.push(trend_trades, trend_trade)
+
+// Calculate performance metrics for each preset
+f_calculate_preset_metrics(trades_array, equity) =>
+    total_trades = array.size(trades_array)
+    if total_trades == 0
+        result = array.new<float>(5)
+        array.set(result, 0, float(na))
+        array.set(result, 1, float(na))
+        array.set(result, 2, float(na))
+        array.set(result, 3, float(na))
+        array.set(result, 4, float(na))
+        result
+    else
+        winning_trades = 0
+        total_profit = 0.0
+        total_loss = 0.0
+        
+        for i = 0 to total_trades - 1
+            trade_result = array.get(trades_array, i)
+            total_profit := total_profit + math.max(trade_result, 0)
+            total_loss := total_loss + math.min(trade_result, 0)
+            if trade_result > 0
+                winning_trades := winning_trades + 1
+        
+        win_rate = total_trades > 0 ? (winning_trades / total_trades) * 100 : na
+        profit_factor = math.abs(total_loss) > 0 ? total_profit / math.abs(total_loss) : na
+        net_profit_pct = (equity - 10000) / 10000 * 100
+        avg_trade = total_trades > 0 ? net_profit_pct / total_trades : na
+        max_dd_pct = float(na)  // Simplified for now
+        
+        result = array.new<float>(5)
+        array.set(result, 0, win_rate)
+        array.set(result, 1, profit_factor)
+        array.set(result, 2, max_dd_pct)
+        array.set(result, 3, net_profit_pct)
+        array.set(result, 4, avg_trade)
+        result
+
+// Get metrics for all presets
+default_metrics = preset == "Default" ? na : f_calculate_preset_metrics(default_trades, default_equity)
+default_winrate = na(default_metrics) ? na : array.get(default_metrics, 0)
+default_pf = na(default_metrics) ? na : array.get(default_metrics, 1)
+default_dd = na(default_metrics) ? na : array.get(default_metrics, 2)
+default_netprofit_pct = na(default_metrics) ? na : array.get(default_metrics, 3)
+default_avgtrade = na(default_metrics) ? na : array.get(default_metrics, 4)
+
+optimal_metrics = preset == "Optimal Performance" ? na : f_calculate_preset_metrics(optimal_trades, optimal_equity)
+optimal_winrate = na(optimal_metrics) ? na : array.get(optimal_metrics, 0)
+optimal_pf = na(optimal_metrics) ? na : array.get(optimal_metrics, 1)
+optimal_dd = na(optimal_metrics) ? na : array.get(optimal_metrics, 2)
+optimal_netprofit_pct = na(optimal_metrics) ? na : array.get(optimal_metrics, 3)
+optimal_avgtrade = na(optimal_metrics) ? na : array.get(optimal_metrics, 4)
+
+breakout_metrics = preset == "Breakout" ? na : f_calculate_preset_metrics(breakout_trades, breakout_equity)
+breakout_winrate = na(breakout_metrics) ? na : array.get(breakout_metrics, 0)
+breakout_pf = na(breakout_metrics) ? na : array.get(breakout_metrics, 1)
+breakout_dd = na(breakout_metrics) ? na : array.get(breakout_metrics, 2)
+breakout_netprofit_pct = na(breakout_metrics) ? na : array.get(breakout_metrics, 3)
+breakout_avgtrade = na(breakout_metrics) ? na : array.get(breakout_metrics, 4)
+
+reversal_metrics = preset == "Reversal" ? na : f_calculate_preset_metrics(reversal_trades, reversal_equity)
+reversal_winrate = na(reversal_metrics) ? na : array.get(reversal_metrics, 0)
+reversal_pf = na(reversal_metrics) ? na : array.get(reversal_metrics, 1)
+reversal_dd = na(reversal_metrics) ? na : array.get(reversal_metrics, 2)
+reversal_netprofit_pct = na(reversal_metrics) ? na : array.get(reversal_metrics, 3)
+reversal_avgtrade = na(reversal_metrics) ? na : array.get(reversal_metrics, 4)
+
+trend_metrics = preset == "Trend Dominator" ? na : f_calculate_preset_metrics(trend_trades, trend_equity)
+trend_winrate = na(trend_metrics) ? na : array.get(trend_metrics, 0)
+trend_pf = na(trend_metrics) ? na : array.get(trend_metrics, 1)
+trend_dd = na(trend_metrics) ? na : array.get(trend_metrics, 2)
+trend_netprofit_pct = na(trend_metrics) ? na : array.get(trend_metrics, 3)
+trend_avgtrade = na(trend_metrics) ? na : array.get(trend_metrics, 4)
+
+// ====== DYNAMIC METRICS FOR ACTIVE PRESET ======
 winrate = strategy.closedtrades > 0 ? (strategy.wintrades / strategy.closedtrades) * 100 : na
 pf = math.abs(strategy.grossloss) > 0 ? strategy.grossprofit / math.abs(strategy.grossloss) : na
 dd = strategy.max_drawdown
 netprofit = strategy.netprofit
+netprofit_percent = strategy.initial_capital > 0 ? (strategy.netprofit / strategy.initial_capital) * 100 : na
 trades = strategy.closedtrades
 avgtrade = trades > 0 ? netprofit / trades : na
+
+// Debug table for metrics
+var table metricsDebugTable = table.new(position.middle_left, 2, 8, border_width=1)
+if barstate.islast
+    table.cell(metricsDebugTable, 0, 0, "Metric", bgcolor=color.blue, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 0, "Value", bgcolor=color.blue, text_color=color.white)
+    table.cell(metricsDebugTable, 0, 1, "Preset", bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 1, preset, bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 0, 2, "Win Rate", bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 2, na(winrate) ? "NA" : str.tostring(winrate, "#.#"), bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 0, 3, "Profit Factor", bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 3, na(pf) ? "NA" : str.tostring(pf, "#.###"), bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 0, 4, "Max DD", bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 4, na(dd) ? "NA" : str.tostring(dd, "#.##"), bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 0, 5, "Net Profit%", bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 5, na(netprofit_percent) ? "NA" : str.tostring(netprofit_percent, "#.##"), bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 0, 6, "Total Trades", bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 6, na(trades) ? "NA" : str.tostring(trades), bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 0, 7, "Avg Trade", bgcolor=color.gray, text_color=color.white)
+    table.cell(metricsDebugTable, 1, 7, na(avgtrade) ? "NA" : str.tostring(avgtrade, "#.##"), bgcolor=color.gray, text_color=color.white)
 // ====== PERFORMANCE TABLE ======
 var table performanceTable = table.new(position.bottom_left, 6, 8, border_width=1)
 
@@ -325,53 +524,54 @@ if barstate.islast
     table.cell(performanceTable, 4, 0, "Reversal", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
     table.cell(performanceTable, 5, 0, "Trend Dom", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
-    // Win Rate Row - show static simulated values for all presets
+    // Win Rate Row - show real metrics for all presets
     table.cell(performanceTable, 0, 1, "Win Rate%", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 1, "68.2%", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 1, "72.5%", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 1, "65.8%", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 1, "74.1%", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 1, "69.3%", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 1, preset == "Default" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : (na(default_winrate) ? "-" : str.tostring(default_winrate, "#.#") + "%"), bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 1, preset == "Optimal Performance" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : (na(optimal_winrate) ? "-" : str.tostring(optimal_winrate, "#.#") + "%"), bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 1, preset == "Breakout" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : (na(breakout_winrate) ? "-" : str.tostring(breakout_winrate, "#.#") + "%"), bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 1, preset == "Reversal" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : (na(reversal_winrate) ? "-" : str.tostring(reversal_winrate, "#.#") + "%"), bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 1, preset == "Trend Dominator" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : (na(trend_winrate) ? "-" : str.tostring(trend_winrate, "#.#") + "%"), bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Profit Factor Row
     table.cell(performanceTable, 0, 2, "Profit Factor", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 2, "1.85", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 2, "2.12", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 2, "1.73", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 2, "2.28", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 2, "1.94", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 2, preset == "Default" ? (na(pf) ? "-" : str.tostring(pf, "#.###")) : (na(default_pf) ? "-" : str.tostring(default_pf, "#.###")), bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 2, preset == "Optimal Performance" ? (na(pf) ? "-" : str.tostring(pf, "#.###")) : (na(optimal_pf) ? "-" : str.tostring(optimal_pf, "#.###")), bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 2, preset == "Breakout" ? (na(pf) ? "-" : str.tostring(pf, "#.###")) : (na(breakout_pf) ? "-" : str.tostring(breakout_pf, "#.###")), bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 2, preset == "Reversal" ? (na(pf) ? "-" : str.tostring(pf, "#.###")) : (na(reversal_pf) ? "-" : str.tostring(reversal_pf, "#.###")), bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 2, preset == "Trend Dominator" ? (na(pf) ? "-" : str.tostring(pf, "#.###")) : (na(trend_pf) ? "-" : str.tostring(trend_pf, "#.###")), bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
-    // Max Drawdown Row - Fixed to show real percentage values
+    // Max Drawdown Row - Show real TradingView values as percentage
+    dd_percent = strategy.initial_capital > 0 ? (dd / strategy.initial_capital) * 100 : na
     table.cell(performanceTable, 0, 3, "Max DD%", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 3, "8.2%", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 3, "6.5%", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 3, "9.8%", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 3, "5.9%", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 3, "7.3%", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 3, preset == "Default" ? (na(dd_percent) ? "-" : str.tostring(dd_percent, "#.##") + "%") : (na(default_dd) ? "-" : str.tostring(default_dd, "#.##") + "%"), bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 3, preset == "Optimal Performance" ? (na(dd_percent) ? "-" : str.tostring(dd_percent, "#.##") + "%") : (na(optimal_dd) ? "-" : str.tostring(optimal_dd, "#.##") + "%"), bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 3, preset == "Breakout" ? (na(dd_percent) ? "-" : str.tostring(dd_percent, "#.##") + "%") : (na(breakout_dd) ? "-" : str.tostring(breakout_dd, "#.##") + "%"), bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 3, preset == "Reversal" ? (na(dd_percent) ? "-" : str.tostring(dd_percent, "#.##") + "%") : (na(reversal_dd) ? "-" : str.tostring(reversal_dd, "#.##") + "%"), bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 3, preset == "Trend Dominator" ? (na(dd_percent) ? "-" : str.tostring(dd_percent, "#.##") + "%") : (na(trend_dd) ? "-" : str.tostring(trend_dd, "#.##") + "%"), bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
-    // Net Profit Row
-    table.cell(performanceTable, 0, 4, "Net Profit", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 4, "12,450", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 4, "18,720", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 4, "9,830", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 4, "21,560", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 4, "15,290", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    // Net Profit Row - Now showing as percentage
+    table.cell(performanceTable, 0, 4, "Net Profit%", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(performanceTable, 1, 4, preset == "Default" ? (na(netprofit_percent) ? "-" : str.tostring(netprofit_percent, "#.##") + "%") : (na(default_netprofit_pct) ? "-" : str.tostring(default_netprofit_pct, "#.##") + "%"), bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 4, preset == "Optimal Performance" ? (na(netprofit_percent) ? "-" : str.tostring(netprofit_percent, "#.##") + "%") : (na(optimal_netprofit_pct) ? "-" : str.tostring(optimal_netprofit_pct, "#.##") + "%"), bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 4, preset == "Breakout" ? (na(netprofit_percent) ? "-" : str.tostring(netprofit_percent, "#.##") + "%") : (na(breakout_netprofit_pct) ? "-" : str.tostring(breakout_netprofit_pct, "#.##") + "%"), bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 4, preset == "Reversal" ? (na(netprofit_percent) ? "-" : str.tostring(netprofit_percent, "#.##") + "%") : (na(reversal_netprofit_pct) ? "-" : str.tostring(reversal_netprofit_pct, "#.##") + "%"), bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 4, preset == "Trend Dominator" ? (na(netprofit_percent) ? "-" : str.tostring(netprofit_percent, "#.##") + "%") : (na(trend_netprofit_pct) ? "-" : str.tostring(trend_netprofit_pct, "#.##") + "%"), bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Total Trades Row
     table.cell(performanceTable, 0, 5, "Total Trades", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 5, "47", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 5, "52", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 5, "38", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 5, "61", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 5, "43", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 5, preset == "Default" ? (na(trades) ? "-" : str.tostring(trades)) : str.tostring(array.size(default_trades)), bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 5, preset == "Optimal Performance" ? (na(trades) ? "-" : str.tostring(trades)) : str.tostring(array.size(optimal_trades)), bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 5, preset == "Breakout" ? (na(trades) ? "-" : str.tostring(trades)) : str.tostring(array.size(breakout_trades)), bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 5, preset == "Reversal" ? (na(trades) ? "-" : str.tostring(trades)) : str.tostring(array.size(reversal_trades)), bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 5, preset == "Trend Dominator" ? (na(trades) ? "-" : str.tostring(trades)) : str.tostring(array.size(trend_trades)), bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Average Trade Row
     table.cell(performanceTable, 0, 6, "Avg Trade", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 6, "265", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 6, "360", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 6, "259", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 6, "353", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 6, "356", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 6, preset == "Default" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#.##")) : (na(default_avgtrade) ? "-" : str.tostring(default_avgtrade, "#.##")), bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 6, preset == "Optimal Performance" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#.##")) : (na(optimal_avgtrade) ? "-" : str.tostring(optimal_avgtrade, "#.##")), bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 6, preset == "Breakout" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#.##")) : (na(breakout_avgtrade) ? "-" : str.tostring(breakout_avgtrade, "#.##")), bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 6, preset == "Reversal" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#.##")) : (na(reversal_avgtrade) ? "-" : str.tostring(reversal_avgtrade, "#.##")), bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 6, preset == "Trend Dominator" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#.##")) : (na(trend_avgtrade) ? "-" : str.tostring(trend_avgtrade, "#.##")), bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Last Signal Row - Show live signals for each preset
     table.cell(performanceTable, 0, 7, "Last Signal", bgcolor=color.new(color.gray, 40), text_color=color.white)
