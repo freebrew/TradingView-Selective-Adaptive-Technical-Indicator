@@ -101,8 +101,8 @@ volPeriod = preset == "Optimal Performance" ? volPeriod_optimal : preset == "Bre
 
 // === Signal Combination Settings ===
 signalGroup = "Signal Combination"
-signalStrategy = input.string("All Agree", "Signal Combination Strategy", options=["All Agree", "Majority Vote", "Custom Threshold"], group=signalGroup)
-customThreshold = input.int(3, "Custom Threshold (1-4)", minval=1, maxval=4, tooltip="Number of indicators required to agree for a signal (only used with Custom Threshold selection)", group=signalGroup)
+signalStrategy = input.string("Majority Vote", "Signal Combination Strategy", options=["All Agree", "Majority Vote", "Custom Threshold"], group=signalGroup)
+customThreshold = input.int(2, "Custom Threshold (1-4)", minval=1, maxval=4, tooltip="Number of indicators required to agree for a signal (only used with Custom Threshold selection)", group=signalGroup)
 
 // ====== CACHED MULTI-TIMEFRAME DATA ======
 // Fetch raw OHLCV data for each timeframe ONCE (only 4 security requests total)
@@ -225,7 +225,7 @@ f_calculate_final_signal(t_sig, v_sig, m_sig, vol_sig) =>
     final_sig = if signalStrategy == "All Agree"
         pos_signals >= 4 ? 1 : neg_signals >= 4 ? -1 : 0
     else if signalStrategy == "Majority Vote"
-        pos_signals > neg_signals and pos_signals >= 3 ? 1 : neg_signals > pos_signals and neg_signals >= 3 ? -1 : 0
+        pos_signals >= 2 and pos_signals > neg_signals ? 1 : neg_signals >= 2 and neg_signals > pos_signals ? -1 : 0
     else // Custom Threshold
         pos_signals >= customThreshold ? 1 : neg_signals >= customThreshold ? -1 : 0
     final_sig
@@ -247,7 +247,7 @@ negative_signals = (trending_signal == -1 ? 1 : 0) + (volatility_signal == -1 ? 
 final_signal = if signalStrategy == "All Agree"
     positive_signals >= 4 ? 1 : negative_signals >= 4 ? -1 : 0
 else if signalStrategy == "Majority Vote"
-    positive_signals > negative_signals and positive_signals >= 3 ? 1 : negative_signals > positive_signals and negative_signals >= 3 ? -1 : 0
+    positive_signals >= 2 and positive_signals > negative_signals ? 1 : negative_signals >= 2 and negative_signals > positive_signals ? -1 : 0
 else // Custom Threshold
     positive_signals >= customThreshold ? 1 : negative_signals >= customThreshold ? -1 : 0
 
@@ -274,6 +274,34 @@ if active_signal == 1 and active_signal[1] == -1
 
 // Track signals for all presets (for display purposes)
 final_signal := active_signal
+
+// ====== DEBUG SIGNALS TABLE ======
+var table debugTable = table.new(position.top_left, 3, 6, border_width=1, bgcolor=color.new(color.black, 80))
+
+if barstate.islast
+    table.cell(debugTable, 0, 0, "Signal Debug", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(debugTable, 1, 0, "Current", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    table.cell(debugTable, 2, 0, "Active", bgcolor=color.new(color.blue, 40), text_color=color.white)
+    
+    table.cell(debugTable, 0, 1, "Trending", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 1, 1, str.tostring(trending_signal), bgcolor=color.new(trending_signal == 1 ? color.green : trending_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 2, 1, str.tostring(trending_default), bgcolor=color.new(trending_default == 1 ? color.green : trending_default == -1 ? color.red : color.gray, 40), text_color=color.white)
+    
+    table.cell(debugTable, 0, 2, "Volatility", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 1, 2, str.tostring(volatility_signal), bgcolor=color.new(volatility_signal == 1 ? color.green : volatility_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 2, 2, str.tostring(volatility_default), bgcolor=color.new(volatility_default == 1 ? color.green : volatility_default == -1 ? color.red : color.gray, 40), text_color=color.white)
+    
+    table.cell(debugTable, 0, 3, "Momentum", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 1, 3, str.tostring(momentum_signal), bgcolor=color.new(momentum_signal == 1 ? color.green : momentum_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 2, 3, str.tostring(momentum_default), bgcolor=color.new(momentum_default == 1 ? color.green : momentum_default == -1 ? color.red : color.gray, 40), text_color=color.white)
+    
+    table.cell(debugTable, 0, 4, "Volume", bgcolor=color.new(color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 1, 4, str.tostring(volume_signal), bgcolor=color.new(volume_signal == 1 ? color.green : volume_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 2, 4, str.tostring(volume_default), bgcolor=color.new(volume_default == 1 ? color.green : volume_default == -1 ? color.red : color.gray, 40), text_color=color.white)
+    
+    table.cell(debugTable, 0, 5, "Final Signal", bgcolor=color.new(color.orange, 40), text_color=color.white)
+    table.cell(debugTable, 1, 5, str.tostring(final_signal), bgcolor=color.new(final_signal == 1 ? color.green : final_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
+    table.cell(debugTable, 2, 5, str.tostring(active_signal), bgcolor=color.new(active_signal == 1 ? color.green : active_signal == -1 ? color.red : color.gray, 40), text_color=color.white)
 // ====== DYNAMIC METRICS ======
 winrate = strategy.closedtrades > 0 ? (strategy.wintrades / strategy.closedtrades) * 100 : na
 pf = math.abs(strategy.grossloss) > 0 ? strategy.grossprofit / math.abs(strategy.grossloss) : na
