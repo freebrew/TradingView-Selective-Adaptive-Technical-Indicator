@@ -111,10 +111,6 @@ customThreshold = input.int(3, "Custom Threshold (1-4)", minval=1, maxval=4, too
 [o_1h, h_1h, l_1h, c_1h, v_1h] = request.security(syminfo.tickerid, "60", [open, high, low, close, volume])
 [o_4h, h_4h, l_4h, c_4h, v_4h] = request.security(syminfo.tickerid, "240", [open, high, low, close, volume])
 
-// ====== MULTI-TIMEFRAME INDICATOR CALCULATION FUNCTION ======
-f_calculate_all_signals(o, h, l, c, v) =>
-    f_calculate_preset_signals(o, h, l, c, v, trendsLength, trendsFast, trendsSlow, trendsSignal, volLength, volMultiplier, momLength, momOverBought, momOverSold, volPeriod)
-
 // ====== PRESET-SPECIFIC CALCULATION FUNCTION ======
 f_calculate_preset_signals(o, h, l, c, v, tl, tf, ts, tsig, vl, vm, ml, mob, mos, vp) =>
     // Trending Indicators
@@ -197,6 +193,10 @@ f_calculate_preset_signals(o, h, l, c, v, tl, tf, ts, tsig, vl, vm, ml, mob, mos
     volume_group = volumeType == "OBV" ? obv_sig : volumeType == "MFI" ? mfi_sig : volumeType == "Chaikin Money Flow" ? cmf_sig : volumeType == "Volume Oscillator" ? vo_sig : ad_sig
     
     [sma_sig, ema_sig, macd_sig, adx_sig, psar_sig, bb_sig, atr_sig, kc_sig, std_sig, chaikin_sig, rsi_sig, stoch_sig, cci_sig, williams_sig, macd_hist_sig, obv_sig, mfi_sig, cmf_sig, vo_sig, ad_sig, trending_group, volatility_group, momentum_group, volume_group]
+
+// ====== MULTI-TIMEFRAME INDICATOR CALCULATION FUNCTION ======
+f_calculate_all_signals(o, h, l, c, v) =>
+    f_calculate_preset_signals(o, h, l, c, v, trendsLength, trendsFast, trendsSlow, trendsSignal, volLength, volMultiplier, momLength, momOverBought, momOverSold, volPeriod)
 
 // Calculate all signals for current timeframe using cached data
 [sma_current, ema_current, macd_current, adx_current, psar_current, bb_current, atr_current, kc_current, std_current, chaikin_current, rsi_current, stoch_current, cci_current, williams_current, macd_hist_current, obv_current, mfi_current, cmf_current, vo_current, ad_current, trending_signal, volatility_signal, momentum_signal, volume_signal] = f_calculate_all_signals(open, high, low, close, volume)
