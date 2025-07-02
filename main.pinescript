@@ -43,138 +43,9 @@ signalGroup = "Signal Combination"
 signalStrategy = input.string("All Agree", "Signal Combination Strategy", options=["All Agree", "Majority Vote", "Custom Threshold"], group=signalGroup)
 customThreshold = input.int(3, "Custom Threshold (1-4)", minval=1, maxval=4, tooltip="Number of indicators required to agree for a signal (only used with Custom Threshold selection)", group=signalGroup)
 
-// ====== CALCULATE TRENDING INDICATORS ======
-
-// Always calculate all trending signals
-sma_value = ta.sma(close, trendsLength)
-sma_signal = close > sma_value ? 1 : close < sma_value ? -1 : 0
-
-ema_value = ta.ema(close, trendsLength)
-ema_signal = close > ema_value ? 1 : close < ema_value ? -1 : 0
-
-[macd_line, macd_signal_line, macd_hist] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
-macd_signal = macd_line > macd_signal_line ? 1 : macd_line < macd_signal_line ? -1 : 0
-
-[plusDI, minusDI, adx_value] = ta.dmi(trendsLength, trendsLength)
-adx_signal = adx_value > 25 and plusDI > minusDI ? 1 : adx_value > 25 and plusDI < minusDI ? -1 : 0
-
-psar = ta.sar(0.02, 0.02, 0.2)
-psar_signal = close > psar ? 1 : close < psar ? -1 : 0
-
-// Only use the dropdown for the group signal
-trending_signal = 0
-if trendingType == "SMA"
-    trending_signal := sma_signal
-else if trendingType == "EMA"
-    trending_signal := ema_signal
-else if trendingType == "MACD"
-    trending_signal := macd_signal
-else if trendingType == "ADX"
-    trending_signal := adx_signal
-else if trendingType == "PSAR"
-    trending_signal := psar_signal
-
-// ====== CALCULATE VOLATILITY INDICATORS ======
-
-// Always calculate all volatility signals
-bbMiddle = ta.sma(close, volLength)
-bbUpper = bbMiddle + ta.stdev(close, volLength) * volMultiplier
-bbLower = bbMiddle - ta.stdev(close, volLength) * volMultiplier
-bb_signal = close > bbUpper ? 1 : close < bbLower ? -1 : 0
-
-atr_value = ta.atr(volLength)
-atr_signal = close > close[1] + atr_value ? 1 : close < close[1] - atr_value ? -1 : 0
-
-kc_middle = ta.ema(close, volLength)
-kc_upper = kc_middle + ta.atr(volLength) * volMultiplier
-kc_lower = kc_middle - ta.atr(volLength) * volMultiplier
-kc_signal = close > kc_upper ? 1 : close < kc_lower ? -1 : 0
-
-std_dev = ta.stdev(close, volLength)
-std_signal = std_dev > ta.sma(std_dev, volLength) ? 1 : std_dev < ta.sma(std_dev, volLength) ? -1 : 0
-
-chaikinVol = ta.change(ta.ema(high - low, volLength), volLength)
-chaikin_signal = chaikinVol > 0 ? 1 : chaikinVol < 0 ? -1 : 0
-
-// Only use the dropdown for the group signal
-volatility_signal = 0
-if volatilityType == "Bollinger Bands"
-    volatility_signal := bb_signal
-else if volatilityType == "ATR"
-    volatility_signal := atr_signal
-else if volatilityType == "Keltner Channel"
-    volatility_signal := kc_signal
-else if volatilityType == "Standard Deviation"
-    volatility_signal := std_signal
-else if volatilityType == "Chaikin Volatility"
-    volatility_signal := chaikin_signal
-
-// ====== CALCULATE MOMENTUM INDICATORS ======
-
-// Always calculate all momentum signals
-rsi_value = ta.rsi(close, momLength)
-rsi_signal = rsi_value < momOverSold ? 1 : rsi_value > momOverBought ? -1 : 0
-
-stoch_k = ta.stoch(close, high, low, momLength)
-stoch_d = ta.sma(stoch_k, 3)
-stoch_signal = stoch_k < momOverSold and stoch_k > stoch_d ? 1 : stoch_k > momOverBought and stoch_k < stoch_d ? -1 : 0
-
-cci_value = ta.cci(close, momLength)
-cci_signal = cci_value < -100 ? 1 : cci_value > 100 ? -1 : 0
-
-williams_r = ta.wpr(momLength)
-williams_signal = williams_r < -80 ? 1 : williams_r > -20 ? -1 : 0
-
-[_, _, macd_hist_mom] = ta.macd(close, trendsFast, trendsSlow, trendsSignal)
-macd_hist_signal = macd_hist_mom > 0 and macd_hist_mom > macd_hist_mom[1] ? 1 : macd_hist_mom < 0 and macd_hist_mom < macd_hist_mom[1] ? -1 : 0
-
-// Only use the dropdown for the group signal
-momentum_signal = 0
-if momentumType == "RSI"
-    momentum_signal := rsi_signal
-else if momentumType == "Stochastic"
-    momentum_signal := stoch_signal
-else if momentumType == "CCI"
-    momentum_signal := cci_signal
-else if momentumType == "Williams %R"
-    momentum_signal := williams_signal
-else if momentumType == "MACD Histogram"
-    momentum_signal := macd_hist_signal
-
-// ====== CALCULATE VOLUME INDICATORS ======
-
-// Always calculate all volume signals
-obv_value = ta.obv
-obv_signal = obv_value > ta.sma(obv_value, volPeriod) ? 1 : obv_value < ta.sma(obv_value, volPeriod) ? -1 : 0
-
-mfi_value = ta.mfi(hlc3, volPeriod)
-mfi_signal = mfi_value < 20 ? 1 : mfi_value > 80 ? -1 : 0
-
-moneyFlowMultiplier = ((close - low) - (high - close)) / (high - low)
-moneyFlowVolume = moneyFlowMultiplier * volume
-cmf_value = ta.sma(moneyFlowVolume, volPeriod) / ta.sma(volume, volPeriod)
-cmf_signal = cmf_value > 0.05 ? 1 : cmf_value < -0.05 ? -1 : 0
-
-volume_ema_fast = ta.ema(volume, 12)
-volume_ema_slow = ta.ema(volume, 26)
-vo_value = 100 * (volume_ema_fast - volume_ema_slow) / volume_ema_slow
-vo_signal = vo_value > 0 ? 1 : vo_value < 0 ? -1 : 0
-
-ad_value = ta.accdist
-ad_signal = ad_value > ta.sma(ad_value, volPeriod) ? 1 : ad_value < ta.sma(ad_value, volPeriod) ? -1 : 0
-
-// Only use the dropdown for the group signal
-volume_signal = 0
-if volumeType == "OBV"
-    volume_signal := obv_signal
-else if volumeType == "MFI"
-    volume_signal := mfi_signal
-else if volumeType == "Chaikin Money Flow"
-    volume_signal := cmf_signal
-else if volumeType == "Volume Oscillator"
-    volume_signal := vo_signal
-else if volumeType == "A/D Line"
-    volume_signal := ad_signal
+// ====== INDICATORS NOW CALCULATED VIA CACHED FUNCTION ======
+// All individual and group signals are now calculated using the f_calculate_all_signals() function
+// This eliminates redundant calculations and uses cached multi-timeframe data
 
 // ====== SIGNAL COMBINATION STRATEGY ======
 
@@ -252,27 +123,108 @@ plotshape(series=final_signal == -1 and final_signal[1] != -1, title="Sell Signa
 alertcondition(final_signal == 1 and final_signal[1] != 1, title="Buy Signal Alert", message="Buy signal generated by Four Dropdown Technical Indicator Strategy")
 alertcondition(final_signal == -1 and final_signal[1] != -1, title="Sell Signal Alert", message="Sell signal generated by Four Dropdown Technical Indicator Strategy")
 
+// ====== CACHED MULTI-TIMEFRAME DATA ======
+// Fetch raw OHLCV data for each timeframe ONCE (only 4 security requests total)
+[o_5m, h_5m, l_5m, c_5m, v_5m] = request.security(syminfo.tickerid, "5", [open, high, low, close, volume])
+[o_30m, h_30m, l_30m, c_30m, v_30m] = request.security(syminfo.tickerid, "30", [open, high, low, close, volume])
+[o_1h, h_1h, l_1h, c_1h, v_1h] = request.security(syminfo.tickerid, "60", [open, high, low, close, volume])
+[o_4h, h_4h, l_4h, c_4h, v_4h] = request.security(syminfo.tickerid, "240", [open, high, low, close, volume])
+
+// ====== MULTI-TIMEFRAME INDICATOR CALCULATION FUNCTION ======
+f_calculate_all_signals(o, h, l, c, v) =>
+    // Trending Indicators
+    sma_val = ta.sma(c, trendsLength)
+    sma_sig = c > sma_val ? 1 : c < sma_val ? -1 : 0
+    
+    ema_val = ta.ema(c, trendsLength)
+    ema_sig = c > ema_val ? 1 : c < ema_val ? -1 : 0
+    
+    [macd_l, macd_s, macd_h] = ta.macd(c, trendsFast, trendsSlow, trendsSignal)
+    macd_sig = macd_l > macd_s ? 1 : macd_l < macd_s ? -1 : 0
+    
+    [plusDI_val, minusDI_val, adx_val] = ta.dmi(trendsLength, trendsLength)
+    adx_sig = adx_val > 25 and plusDI_val > minusDI_val ? 1 : adx_val > 25 and plusDI_val < minusDI_val ? -1 : 0
+    
+    psar_val = ta.sar(0.02, 0.02, 0.2)
+    psar_sig = c > psar_val ? 1 : c < psar_val ? -1 : 0
+    
+    // Volatility Indicators
+    bbMiddle_val = ta.sma(c, volLength)
+    bbUpper_val = bbMiddle_val + ta.stdev(c, volLength) * volMultiplier
+    bbLower_val = bbMiddle_val - ta.stdev(c, volLength) * volMultiplier
+    bb_sig = c > bbUpper_val ? 1 : c < bbLower_val ? -1 : 0
+    
+    atr_val = ta.atr(volLength)
+    atr_sig = c > c[1] + atr_val ? 1 : c < c[1] - atr_val ? -1 : 0
+    
+    kc_middle_val = ta.ema(c, volLength)
+    kc_upper_val = kc_middle_val + ta.atr(volLength) * volMultiplier
+    kc_lower_val = kc_middle_val - ta.atr(volLength) * volMultiplier
+    kc_sig = c > kc_upper_val ? 1 : c < kc_lower_val ? -1 : 0
+    
+    std_dev_val = ta.stdev(c, volLength)
+    std_sig = std_dev_val > ta.sma(std_dev_val, volLength) ? 1 : std_dev_val < ta.sma(std_dev_val, volLength) ? -1 : 0
+    
+    chaikinVol_val = ta.change(ta.ema(h - l, volLength), volLength)
+    chaikin_sig = chaikinVol_val > 0 ? 1 : chaikinVol_val < 0 ? -1 : 0
+    
+    // Momentum Indicators
+    rsi_val = ta.rsi(c, momLength)
+    rsi_sig = rsi_val < momOverSold ? 1 : rsi_val > momOverBought ? -1 : 0
+    
+    stoch_k_val = ta.stoch(c, h, l, momLength)
+    stoch_d_val = ta.sma(stoch_k_val, 3)
+    stoch_sig = stoch_k_val < momOverSold and stoch_k_val > stoch_d_val ? 1 : stoch_k_val > momOverBought and stoch_k_val < stoch_d_val ? -1 : 0
+    
+    cci_val = ta.cci(c, momLength)
+    cci_sig = cci_val < -100 ? 1 : cci_val > 100 ? -1 : 0
+    
+    williams_r_val = ta.wpr(momLength)
+    williams_sig = williams_r_val < -80 ? 1 : williams_r_val > -20 ? -1 : 0
+    
+    [_, _, macd_hist_val] = ta.macd(c, trendsFast, trendsSlow, trendsSignal)
+    macd_hist_sig = macd_hist_val > 0 and macd_hist_val > macd_hist_val[1] ? 1 : macd_hist_val < 0 and macd_hist_val < macd_hist_val[1] ? -1 : 0
+    
+    // Volume Indicators
+    obv_val = ta.obv
+    obv_sig = obv_val > ta.sma(obv_val, volPeriod) ? 1 : obv_val < ta.sma(obv_val, volPeriod) ? -1 : 0
+    
+    mfi_val = ta.mfi((h + l + c) / 3, volPeriod)
+    mfi_sig = mfi_val < 20 ? 1 : mfi_val > 80 ? -1 : 0
+    
+    moneyFlowMultiplier_val = ((c - l) - (h - c)) / (h - l)
+    moneyFlowVolume_val = moneyFlowMultiplier_val * v
+    cmf_val = ta.sma(moneyFlowVolume_val, volPeriod) / ta.sma(v, volPeriod)
+    cmf_sig = cmf_val > 0.05 ? 1 : cmf_val < -0.05 ? -1 : 0
+    
+    volume_ema_fast_val = ta.ema(v, 12)
+    volume_ema_slow_val = ta.ema(v, 26)
+    vo_val = 100 * (volume_ema_fast_val - volume_ema_slow_val) / volume_ema_slow_val
+    vo_sig = vo_val > 0 ? 1 : vo_val < 0 ? -1 : 0
+    
+    ad_val = ta.accdist
+    ad_sig = ad_val > ta.sma(ad_val, volPeriod) ? 1 : ad_val < ta.sma(ad_val, volPeriod) ? -1 : 0
+    
+    // Group signals based on dropdown selections
+    trending_group = trendingType == "SMA" ? sma_sig : trendingType == "EMA" ? ema_sig : trendingType == "MACD" ? macd_sig : trendingType == "ADX" ? adx_sig : psar_sig
+    volatility_group = volatilityType == "Bollinger Bands" ? bb_sig : volatilityType == "ATR" ? atr_sig : volatilityType == "Keltner Channel" ? kc_sig : volatilityType == "Standard Deviation" ? std_sig : chaikin_sig
+    momentum_group = momentumType == "RSI" ? rsi_sig : momentumType == "Stochastic" ? stoch_sig : momentumType == "CCI" ? cci_sig : momentumType == "Williams %R" ? williams_sig : macd_hist_sig
+    volume_group = volumeType == "OBV" ? obv_sig : volumeType == "MFI" ? mfi_sig : volumeType == "Chaikin Money Flow" ? cmf_sig : volumeType == "Volume Oscillator" ? vo_sig : ad_sig
+    
+    [sma_sig, ema_sig, macd_sig, adx_sig, psar_sig, bb_sig, atr_sig, kc_sig, std_sig, chaikin_sig, rsi_sig, stoch_sig, cci_sig, williams_sig, macd_hist_sig, obv_sig, mfi_sig, cmf_sig, vo_sig, ad_sig, trending_group, volatility_group, momentum_group, volume_group]
+
+// Calculate all signals for each timeframe using cached data
+[sma_current, ema_current, macd_current, adx_current, psar_current, bb_current, atr_current, kc_current, std_current, chaikin_current, rsi_current, stoch_current, cci_current, williams_current, macd_hist_current, obv_current, mfi_current, cmf_current, vo_current, ad_current, trending_signal, volatility_signal, momentum_signal, volume_signal] = f_calculate_all_signals(open, high, low, close, volume)
+
+[sma_5m, ema_5m, macd_5m, adx_5m, psar_5m, bb_5m, atr_5m, kc_5m, std_5m, chaikin_5m, rsi_5m, stoch_5m, cci_5m, williams_5m, macd_hist_5m, obv_5m, mfi_5m, cmf_5m, vo_5m, ad_5m, trending_5m, volatility_5m, momentum_5m, volume_5m] = f_calculate_all_signals(o_5m, h_5m, l_5m, c_5m, v_5m)
+
+[sma_30m, ema_30m, macd_30m, adx_30m, psar_30m, bb_30m, atr_30m, kc_30m, std_30m, chaikin_30m, rsi_30m, stoch_30m, cci_30m, williams_30m, macd_hist_30m, obv_30m, mfi_30m, cmf_30m, vo_30m, ad_30m, trending_30m, volatility_30m, momentum_30m, volume_30m] = f_calculate_all_signals(o_30m, h_30m, l_30m, c_30m, v_30m)
+
+[sma_1h, ema_1h, macd_1h, adx_1h, psar_1h, bb_1h, atr_1h, kc_1h, std_1h, chaikin_1h, rsi_1h, stoch_1h, cci_1h, williams_1h, macd_hist_1h, obv_1h, mfi_1h, cmf_1h, vo_1h, ad_1h, trending_1h, volatility_1h, momentum_1h, volume_1h] = f_calculate_all_signals(o_1h, h_1h, l_1h, c_1h, v_1h)
+
+[sma_4h, ema_4h, macd_4h, adx_4h, psar_4h, bb_4h, atr_4h, kc_4h, std_4h, chaikin_4h, rsi_4h, stoch_4h, cci_4h, williams_4h, macd_hist_4h, obv_4h, mfi_4h, cmf_4h, vo_4h, ad_4h, trending_4h, volatility_4h, momentum_4h, volume_4h] = f_calculate_all_signals(o_4h, h_4h, l_4h, c_4h, v_4h)
+
 var table mtfTable = table.new(position.bottom_right, 6, 6, bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
-
-trending_5m = request.security(syminfo.tickerid, "5", trending_signal)
-trending_30m = request.security(syminfo.tickerid, "30", trending_signal)
-trending_1h = request.security(syminfo.tickerid, "60", trending_signal)
-trending_4h = request.security(syminfo.tickerid, "240", trending_signal)
-
-volatility_5m = request.security(syminfo.tickerid, "5", volatility_signal)
-volatility_30m = request.security(syminfo.tickerid, "30", volatility_signal)
-volatility_1h = request.security(syminfo.tickerid, "60", volatility_signal)
-volatility_4h = request.security(syminfo.tickerid, "240", volatility_signal)
-
-momentum_5m = request.security(syminfo.tickerid, "5", momentum_signal)
-momentum_30m = request.security(syminfo.tickerid, "30", momentum_signal)
-momentum_1h = request.security(syminfo.tickerid, "60", momentum_signal)
-momentum_4h = request.security(syminfo.tickerid, "240", momentum_signal)
-
-volume_5m = request.security(syminfo.tickerid, "5", volume_signal)
-volume_30m = request.security(syminfo.tickerid, "30", volume_signal)
-volume_1h = request.security(syminfo.tickerid, "60", volume_signal)
-volume_4h = request.security(syminfo.tickerid, "240", volume_signal)
 
 // Calculate combined signals for each timeframe
 combined_current = final_signal
@@ -330,116 +282,8 @@ if barstate.islast
     table.cell(mtfTable, 4, 5, combined_1h == 1 ? "BUY" : combined_1h == -1 ? "SELL" : "HOLD", bgcolor=color.new(combined_1h == 1 ? color.green : combined_1h == -1 ? color.red : color.gray, 40), text_color=color.white)
     table.cell(mtfTable, 5, 5, combined_4h == 1 ? "BUY" : combined_4h == -1 ? "SELL" : "HOLD", bgcolor=color.new(combined_4h == 1 ? color.green : combined_4h == -1 ? color.red : color.gray, 40), text_color=color.white)
 
-tf_5m = "5"
-tf_30m = "30"
-tf_1h = "60"
-tf_4h = "240"
-
 // ====== MULTI-INDICATOR, MULTI-TIMEFRAME SIGNALS TABLE ======
-// --- Trending Indicators ---
-sma_current = sma_signal
-sma_5m = request.security(syminfo.tickerid, "5", sma_signal)
-sma_30m = request.security(syminfo.tickerid, "30", sma_signal)
-sma_1h = request.security(syminfo.tickerid, "60", sma_signal)
-sma_4h = request.security(syminfo.tickerid, "240", sma_signal)
-ema_current = ema_signal
-ema_5m = request.security(syminfo.tickerid, "5", ema_signal)
-ema_30m = request.security(syminfo.tickerid, "30", ema_signal)
-ema_1h = request.security(syminfo.tickerid, "60", ema_signal)
-ema_4h = request.security(syminfo.tickerid, "240", ema_signal)
-macd_current = macd_signal
-macd_5m = request.security(syminfo.tickerid, "5", macd_signal)
-macd_30m = request.security(syminfo.tickerid, "30", macd_signal)
-macd_1h = request.security(syminfo.tickerid, "60", macd_signal)
-macd_4h = request.security(syminfo.tickerid, "240", macd_signal)
-adx_current = adx_signal
-adx_5m = request.security(syminfo.tickerid, "5", adx_signal)
-adx_30m = request.security(syminfo.tickerid, "30", adx_signal)
-adx_1h = request.security(syminfo.tickerid, "60", adx_signal)
-adx_4h = request.security(syminfo.tickerid, "240", adx_signal)
-psar_current = psar_signal
-psar_5m = request.security(syminfo.tickerid, "5", psar_signal)
-psar_30m = request.security(syminfo.tickerid, "30", psar_signal)
-psar_1h = request.security(syminfo.tickerid, "60", psar_signal)
-psar_4h = request.security(syminfo.tickerid, "240", psar_signal)
-// Volatility
-bb_current = bb_signal
-bb_5m = request.security(syminfo.tickerid, "5", bb_signal)
-bb_30m = request.security(syminfo.tickerid, "30", bb_signal)
-bb_1h = request.security(syminfo.tickerid, "60", bb_signal)
-bb_4h = request.security(syminfo.tickerid, "240", bb_signal)
-atr_current = atr_signal
-atr_5m = request.security(syminfo.tickerid, "5", atr_signal)
-atr_30m = request.security(syminfo.tickerid, "30", atr_signal)
-atr_1h = request.security(syminfo.tickerid, "60", atr_signal)
-atr_4h = request.security(syminfo.tickerid, "240", atr_signal)
-kc_current = kc_signal
-kc_5m = request.security(syminfo.tickerid, "5", kc_signal)
-kc_30m = request.security(syminfo.tickerid, "30", kc_signal)
-kc_1h = request.security(syminfo.tickerid, "60", kc_signal)
-kc_4h = request.security(syminfo.tickerid, "240", kc_signal)
-std_current = std_signal
-std_5m = request.security(syminfo.tickerid, "5", std_signal)
-std_30m = request.security(syminfo.tickerid, "30", std_signal)
-std_1h = request.security(syminfo.tickerid, "60", std_signal)
-std_4h = request.security(syminfo.tickerid, "240", std_signal)
-chaikin_current = chaikin_signal
-chaikin_5m = request.security(syminfo.tickerid, "5", chaikin_signal)
-chaikin_30m = request.security(syminfo.tickerid, "30", chaikin_signal)
-chaikin_1h = request.security(syminfo.tickerid, "60", chaikin_signal)
-chaikin_4h = request.security(syminfo.tickerid, "240", chaikin_signal)
-// Momentum
-rsi_current = rsi_signal
-rsi_5m = request.security(syminfo.tickerid, "5", rsi_signal)
-rsi_30m = request.security(syminfo.tickerid, "30", rsi_signal)
-rsi_1h = request.security(syminfo.tickerid, "60", rsi_signal)
-rsi_4h = request.security(syminfo.tickerid, "240", rsi_signal)
-stoch_current = stoch_signal
-stoch_5m = request.security(syminfo.tickerid, "5", stoch_signal)
-stoch_30m = request.security(syminfo.tickerid, "30", stoch_signal)
-stoch_1h = request.security(syminfo.tickerid, "60", stoch_signal)
-stoch_4h = request.security(syminfo.tickerid, "240", stoch_signal)
-cci_current = cci_signal
-cci_5m = request.security(syminfo.tickerid, "5", cci_signal)
-cci_30m = request.security(syminfo.tickerid, "30", cci_signal)
-cci_1h = request.security(syminfo.tickerid, "60", cci_signal)
-cci_4h = request.security(syminfo.tickerid, "240", cci_signal)
-williams_current = williams_signal
-williams_5m = request.security(syminfo.tickerid, "5", williams_signal)
-williams_30m = request.security(syminfo.tickerid, "30", williams_signal)
-williams_1h = request.security(syminfo.tickerid, "60", williams_signal)
-williams_4h = request.security(syminfo.tickerid, "240", williams_signal)
-macd_hist_current = macd_hist_signal
-macd_hist_5m = request.security(syminfo.tickerid, "5", macd_hist_signal)
-macd_hist_30m = request.security(syminfo.tickerid, "30", macd_hist_signal)
-macd_hist_1h = request.security(syminfo.tickerid, "60", macd_hist_signal)
-macd_hist_4h = request.security(syminfo.tickerid, "240", macd_hist_signal)
-// Volume
-obv_current = obv_signal
-obv_5m = request.security(syminfo.tickerid, "5", obv_signal)
-obv_30m = request.security(syminfo.tickerid, "30", obv_signal)
-obv_1h = request.security(syminfo.tickerid, "60", obv_signal)
-obv_4h = request.security(syminfo.tickerid, "240", obv_signal)
-mfi_current = mfi_signal
-mfi_5m = request.security(syminfo.tickerid, "5", mfi_signal)
-mfi_30m = request.security(syminfo.tickerid, "30", mfi_signal)
-mfi_1h = request.security(syminfo.tickerid, "60", mfi_signal)
-mfi_4h = request.security(syminfo.tickerid, "240", mfi_signal)
-cmf_current = cmf_signal
-cmf_5m = request.security(syminfo.tickerid, "5", cmf_signal)
-cmf_30m = request.security(syminfo.tickerid, "30", cmf_signal)
-cmf_1h = request.security(syminfo.tickerid, "60", cmf_signal)
-cmf_4h = request.security(syminfo.tickerid, "240", cmf_signal)
-vo_current = vo_signal
-vo_5m = request.security(syminfo.tickerid, "5", vo_signal)
-vo_30m = request.security(syminfo.tickerid, "30", vo_signal)
-vo_1h = request.security(syminfo.tickerid, "60", vo_signal)
-vo_4h = request.security(syminfo.tickerid, "240", vo_signal)
-ad_current = ad_signal
-ad_5m = request.security(syminfo.tickerid, "5", ad_signal)
-ad_30m = request.security(syminfo.tickerid, "30", ad_signal)
-ad_1h = request.security(syminfo.tickerid, "60", ad_signal)
-ad_4h = request.security(syminfo.tickerid, "240", ad_signal)
+// All signals are now calculated using cached data - NO MORE SECURITY REQUESTS!
 // --- Table for all signals ---
 var table allSignalsTable = table.new(position.bottom_right, 7, 21, border_width=1, bgcolor=color.new(color.black, 80))
 
