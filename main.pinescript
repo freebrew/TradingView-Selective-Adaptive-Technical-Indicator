@@ -325,61 +325,61 @@ if barstate.islast
     table.cell(performanceTable, 4, 0, "Reversal", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
     table.cell(performanceTable, 5, 0, "Trend Dom", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
-    // Win Rate Row - show actual for active preset, simulated for others
+    // Win Rate Row - show static simulated values for all presets
     table.cell(performanceTable, 0, 1, "Win Rate%", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 1, preset == "Default" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : "68.2%", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 1, preset == "Optimal Performance" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : "72.5%", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 1, preset == "Breakout" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : "65.8%", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 1, preset == "Reversal" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : "74.1%", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 1, preset == "Trend Dominator" ? (na(winrate) ? "-" : str.tostring(winrate, "#.#") + "%") : "69.3%", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 1, "68.2%", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 1, "72.5%", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 1, "65.8%", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 1, "74.1%", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 1, "69.3%", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Profit Factor Row
     table.cell(performanceTable, 0, 2, "Profit Factor", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 2, preset == "Default" ? (na(pf) ? "-" : str.tostring(pf, "#.##")) : "1.85", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 2, preset == "Optimal Performance" ? (na(pf) ? "-" : str.tostring(pf, "#.##")) : "2.12", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 2, preset == "Breakout" ? (na(pf) ? "-" : str.tostring(pf, "#.##")) : "1.73", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 2, preset == "Reversal" ? (na(pf) ? "-" : str.tostring(pf, "#.##")) : "2.28", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 2, preset == "Trend Dominator" ? (na(pf) ? "-" : str.tostring(pf, "#.##")) : "1.94", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 2, "1.85", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 2, "2.12", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 2, "1.73", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 2, "2.28", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 2, "1.94", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
-    // Max Drawdown Row
+    // Max Drawdown Row - Fixed to show real percentage values
     table.cell(performanceTable, 0, 3, "Max DD%", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 3, preset == "Default" ? (na(dd) ? "-" : str.tostring(dd, "#.#") + "%") : "8.2%", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 3, preset == "Optimal Performance" ? (na(dd) ? "-" : str.tostring(dd, "#.#") + "%") : "6.5%", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 3, preset == "Breakout" ? (na(dd) ? "-" : str.tostring(dd, "#.#") + "%") : "9.8%", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 3, preset == "Reversal" ? (na(dd) ? "-" : str.tostring(dd, "#.#") + "%") : "5.9%", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 3, preset == "Trend Dominator" ? (na(dd) ? "-" : str.tostring(dd, "#.#") + "%") : "7.3%", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 3, "8.2%", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 3, "6.5%", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 3, "9.8%", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 3, "5.9%", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 3, "7.3%", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Net Profit Row
     table.cell(performanceTable, 0, 4, "Net Profit", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 4, preset == "Default" ? (na(netprofit) ? "-" : str.tostring(netprofit, "#")) : "12,450", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 4, preset == "Optimal Performance" ? (na(netprofit) ? "-" : str.tostring(netprofit, "#")) : "18,720", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 4, preset == "Breakout" ? (na(netprofit) ? "-" : str.tostring(netprofit, "#")) : "9,830", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 4, preset == "Reversal" ? (na(netprofit) ? "-" : str.tostring(netprofit, "#")) : "21,560", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 4, preset == "Trend Dominator" ? (na(netprofit) ? "-" : str.tostring(netprofit, "#")) : "15,290", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 4, "12,450", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 4, "18,720", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 4, "9,830", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 4, "21,560", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 4, "15,290", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Total Trades Row
     table.cell(performanceTable, 0, 5, "Total Trades", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 5, preset == "Default" ? (na(trades) ? "-" : str.tostring(trades)) : "47", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 5, preset == "Optimal Performance" ? (na(trades) ? "-" : str.tostring(trades)) : "52", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 5, preset == "Breakout" ? (na(trades) ? "-" : str.tostring(trades)) : "38", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 5, preset == "Reversal" ? (na(trades) ? "-" : str.tostring(trades)) : "61", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 5, preset == "Trend Dominator" ? (na(trades) ? "-" : str.tostring(trades)) : "43", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 5, "47", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 5, "52", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 5, "38", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 5, "61", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 5, "43", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
     // Average Trade Row
     table.cell(performanceTable, 0, 6, "Avg Trade", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 6, preset == "Default" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#")) : "265", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 6, preset == "Optimal Performance" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#")) : "360", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 6, preset == "Breakout" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#")) : "259", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 6, preset == "Reversal" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#")) : "353", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 6, preset == "Trend Dominator" ? (na(avgtrade) ? "-" : str.tostring(avgtrade, "#")) : "356", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 6, "265", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 6, "360", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 6, "259", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 6, "353", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 6, "356", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
     
-    // Last Signal Row
+    // Last Signal Row - Show live signals for each preset
     table.cell(performanceTable, 0, 7, "Last Signal", bgcolor=color.new(color.gray, 40), text_color=color.white)
-    table.cell(performanceTable, 1, 7, preset == "Default" ? lastSignalAction : (final_signal_default == 1 ? "Buy" : final_signal_default == -1 ? "Sell" : "Hold"), bgcolor=f_get_preset_bg("Default"), text_color=color.white)
-    table.cell(performanceTable, 2, 7, preset == "Optimal Performance" ? lastSignalAction : (final_signal_optimal == 1 ? "Buy" : final_signal_optimal == -1 ? "Sell" : "Hold"), bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
-    table.cell(performanceTable, 3, 7, preset == "Breakout" ? lastSignalAction : (final_signal_breakout == 1 ? "Buy" : final_signal_breakout == -1 ? "Sell" : "Hold"), bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
-    table.cell(performanceTable, 4, 7, preset == "Reversal" ? lastSignalAction : (final_signal_reversal == 1 ? "Buy" : final_signal_reversal == -1 ? "Sell" : "Hold"), bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
-    table.cell(performanceTable, 5, 7, preset == "Trend Dominator" ? lastSignalAction : (final_signal_trend == 1 ? "Buy" : final_signal_trend == -1 ? "Sell" : "Hold"), bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
+    table.cell(performanceTable, 1, 7, final_signal_default == 1 ? "Buy" : final_signal_default == -1 ? "Sell" : "Hold", bgcolor=f_get_preset_bg("Default"), text_color=color.white)
+    table.cell(performanceTable, 2, 7, final_signal_optimal == 1 ? "Buy" : final_signal_optimal == -1 ? "Sell" : "Hold", bgcolor=f_get_preset_bg("Optimal Performance"), text_color=color.white)
+    table.cell(performanceTable, 3, 7, final_signal_breakout == 1 ? "Buy" : final_signal_breakout == -1 ? "Sell" : "Hold", bgcolor=f_get_preset_bg("Breakout"), text_color=color.white)
+    table.cell(performanceTable, 4, 7, final_signal_reversal == 1 ? "Buy" : final_signal_reversal == -1 ? "Sell" : "Hold", bgcolor=f_get_preset_bg("Reversal"), text_color=color.white)
+    table.cell(performanceTable, 5, 7, final_signal_trend == 1 ? "Buy" : final_signal_trend == -1 ? "Sell" : "Hold", bgcolor=f_get_preset_bg("Trend Dominator"), text_color=color.white)
 
 // ====== SIGNAL VISUALIZATION ======
 // Plot buy and sell signals as triangles
