@@ -13,6 +13,9 @@ This strategy allows traders to select one indicator from each of four major cat
 ### Key Features
 
 - **Multi-Timeframe Analysis**: Displays signals across 5min, 30min, 1h, and 4h timeframes
+- **365-Day Lookback Synchronization**: Fair performance comparison with synchronized 365-day maximum lookback for all presets
+- **Hybrid Metrics System**: Real TradingView data for active preset, cached metrics for inactive presets
+- **Enhanced UI Tables**: Clean table design with optimized spacing and visual grouping
 - **Flexible Signal Combination**: Three strategies for combining indicator signals
 - **Pre-configured Presets**: Optimized parameter sets for different trading styles
 - **Advanced Risk Management**: Stop-loss, take-profit, and trailing stop options
@@ -132,13 +135,26 @@ Real-time table showing:
 
 ## Performance Monitoring
 
+### 365-Day Lookback Synchronization
+- **Fair Comparison**: All presets use identical 365-day maximum lookback period
+- **Real-time Updates**: Active preset metrics update every bar for accuracy
+- **Cached Metrics**: Inactive preset data preserved for stable comparison
+- **Hybrid System**: Combines real TradingView data with cached performance metrics
+
 ### Live Performance Metrics
 - **Net Profit**: Total profit/loss and percentage return
 - **Win Rate**: Percentage of winning trades
-- **Maximum Drawdown**: Largest peak-to-trough decline
+- **Maximum Drawdown**: Largest peak-to-trough decline (in currency units)
 - **Profit Factor**: Ratio of gross profit to gross loss
 - **Total Trades**: Number of completed trades
 - **Average Trade**: Average profit/loss per trade
+
+### Enhanced Table UI
+- **Horizontal Preset Layout**: Side-by-side preset comparison for easy evaluation (bottom-left position)
+- **Active Preset Highlighting**: Blue column highlighting for currently selected preset
+- **Multi-Timeframe Signal Matrix**: Comprehensive 7x22 table showing all indicators across timeframes (bottom-right position)
+- **Visual Grouping**: Clean white borders and organized group sections with neutral gray backgrounds
+- **Combined Signal Integration**: Real-time combined signals row included in main signals table
 
 ### Trade Tracking
 - **Last Signal**: Most recent trading action
@@ -239,9 +255,10 @@ final_signal = signalStrategy == "All Agree" ?
 - Color-coded signal strength visualization
 
 ### Information Tables
-- **Multi-Timeframe Signals**: Real-time indicator status across timeframes
-- **Performance Metrics**: Live trading statistics and results
-- **Preset Information**: Active configuration details
+- **All Signals Table**: Comprehensive 7×22 matrix displaying individual indicator signals across all timeframes (bottom-right)
+- **Performance Metrics Table**: Horizontal 6×6 preset comparison with active highlighting and key metrics (bottom-left)
+- **Combined Signals Row**: Integrated summary row showing final combined signals for each timeframe
+- **Visual Consistency**: Standardized white borders, blue headers, and neutral gray backgrounds
 
 ## Advanced Features
 
@@ -258,11 +275,13 @@ Preset-based parameter updating system that:
 - Maintains parameter consistency across timeframes
 - Provides preset descriptions for user guidance
 
-### Intelligent Position Management
-- Automatic position reversal on signal changes
-- Trade limiting to prevent over-trading
-- Daily trade counter with automatic reset
-- Maximum drawdown protection
+### Enhanced UI Architecture
+Optimized table layout system with:
+- **365-Day Synchronization**: Ensures fair performance comparison across all presets
+- **Hybrid Metrics Sourcing**: Real data for active preset, cached data for inactive presets
+- **Table Consolidation**: Removed redundant tables for cleaner interface
+- **Visual Consistency**: Standardized white borders and blue highlighting themes
+- **Responsive Positioning**: Bottom-positioned tables for optimal chart visibility
 
 ## Best Practices
 
@@ -303,5 +322,6 @@ This strategy is provided for educational and research purposes. Past performanc
 
 **Version**: Pine Script v6  
 **Compatibility**: TradingView Platform  
-**Last Updated**: 2024  
+**Last Updated**: January 2025  
+**Features**: 365-Day Lookback Synchronization, Enhanced UI Tables, Hybrid Metrics System  
 **Author**: Trading Strategy Developer
